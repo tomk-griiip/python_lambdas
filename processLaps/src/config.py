@@ -1,6 +1,6 @@
 from lambda_utils import *
 import os
-#tom test
+
 # -------------- static method's to help building the beans objects ---------------#
 
 """
