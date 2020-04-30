@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  AWS
+
+  Sample SAM Template for AWS
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 300
+    Environment:
+      Variables:
+        griiip_api_url: https://2kdzicozch.execute-api.eu-central-1.amazonaws.com/prod/api/v1
+        griiip_api_key: sBTloeh98b1csyMLG7kuJ3xdYehFjeEJ3gpVIgyr
+        cache_ddb_table_name: processLapsCache_develop
+        cache_ddb_table_key: prefix_lap_id
+        accountId: 645717288378
+        my_sql_host: griiipdbinstance.cjipdoye2y5k.eu-central-1.rds.amazonaws.com
+        my_sql_user: lambda
+        my_sql_pass: griiip1011
+        my_sql_db: griiip_test
+
+Resources:
+  consumer:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: src/
+      Handler: consumer_lambda.lambda_handler
+      Runtime: python3.7
+      Environment:
+        Variables:
+          MAX_ACC_PERCENT: 0.80
+          FULL_LAP_FLOOR: 0.90
+          FULL_LAP_CELL: 1.03
+          PART_LAP_FLOOR: 0.10
+          runDataRetrieveLimit: 5000
+          runDataPaging: 1
+          ddb_lap_table: dashboard-test
+          ddb_lap_table_key: lap_id
+          year_prefix: 20
+          kpi_num_of_points: 5
+          listenQueue: https://sqs.eu-central-1.amazonaws.com/645717288378/processLaps_producer-to-consumer
+      Events:
+        LapStart:
+          Type: SQS
+          Properties:
+            Queue: arn:aws:sqs:eu-central-1:645717288378:processLaps_producer
+            BatchSize: 10
+            Enabled: true
+  producer:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: src/
+      Handler: producer_lambda.lambda_handler
+      Environment:
+        Variables:
+          responseQueue: https://sqs.eu-central-1.amazonaws.com/645717288378/processLaps_producer-to-consumer
+      Runtime: python3.7
+      Events:
+        LapStart:
+          Type: SQS
+          Properties:
+            Queue: arn:aws:sqs:eu-central-1:645717288378:api_gateway_to_process_laps
+            BatchSize: 10
+            Enabled: true
+
+

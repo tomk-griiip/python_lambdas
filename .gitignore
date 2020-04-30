@@ -1,0 +1,6 @@
+#root ignore
+/.idea/
+#process lap ignore
+/processLaps/.idea/
+/processLaps/venv/
+/processLaps/.aws-sam/
