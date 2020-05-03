@@ -130,19 +130,8 @@ class Config:
     }
 
     fieldToCalculateKpi: dict = {
-        'throttleSmoothness': {'lambda': 'kpiThrottleSmoothness-throttleSmoothness-13A3WKUJVNDSQ',
-                               'fieldsList': ['throttle', 'longAcc', 'latAcc', 'brakePresF', 'lapTime']},
-        'throttleEfficiency': {'lambda': 'test_tom',
-                               'fieldsList': ['throttle', 'longAcc', 'latAcc', 'brakePresF', 'lapTime']},
-        'brakeEfficiency': {'lambda': 'test_tom',
-                            'fieldsList': ['throttle', 'longAcc', 'latAcc', 'brakePresF', 'lapTime']},
-        'brakepresAggression': {'lambda': 'test_tom',
-                                'fieldsList': ['throttle', 'longAcc', 'latAcc', 'brakePresF', 'lapTime']},
-        'trailBraking': {'lambda': 'test_tom',
-                         'fieldsList': ['throttle', 'longAcc', 'latAcc', 'brakePresF', 'lapTime']},
-        'trailAcceleration': {'lambda': 'test_tom',
-                              'fieldsList': ['throttle', 'longAcc', 'latAcc', 'brakePresF', 'lapTime']},
-
+        'griiipKpi': {'lambda': 'test_tom',
+                               'fieldsList': ['throttle', 'longAcc', 'latAcc', 'brakePresF', 'lapTime']}
     }
 
     def __init__(self):

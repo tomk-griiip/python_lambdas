@@ -158,7 +158,7 @@ def calculate_kpi(lap, config):
 
     async def invokeLambdaKpi(lambdaName: str, payload={}) -> {}:
         res = lambdaClient.invoke(FunctionName=lambdaName, InvocationType='RequestResponse',
-                                  Payload=json.dumps({'payload': payload}))
+                                  Payload=json.dumps({'lambdaName': lambdaName, 'payload': payload}))
         return json.loads(res['Payload'].read())
 
     for field, task in config.fieldToCalculateKpi.items():
@@ -168,5 +168,6 @@ def calculate_kpi(lap, config):
     done, _ = loop.run_until_complete(asyncio.wait(tasks))
 
     for fut in done:
-        print("return value is {}".format(fut.result()))
+        res = json.loads(fut.result()['body'])
+        print("return value is {}".format(res['value']))
     loop.close()
