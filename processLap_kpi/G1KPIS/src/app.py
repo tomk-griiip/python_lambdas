@@ -22,17 +22,18 @@ KPI_DICT: dict = {
 }
 
 
+# Todo add lumigo tracing
 def lambda_handler(event, context):
     quads: [] = retrieveLapRunDataLapQuads(payload=event['payload'])
     kpi_name: str = event['lambdaName']
     NOP = int(os.environ['num_of_points'])
     throttle, longAcc, latAcc, brakePresF, lapTime = [], [], [], [], []
     for q in quads:
-        throttle.append(q['throttle'])
-        longAcc.append(q['longAcc'])
-        latAcc.append(q['latAcc'])
-        brakePresF.append(q['brakePresF'])
-        lapTime.append(q['lapTime'])
+        throttle.append(float(q['throttle']))
+        longAcc.append(float(q['longAcc']))
+        latAcc.append(float(q['latAcc']))
+        brakePresF.append(float(q['brakePresF']))
+        lapTime.append(float(q['lapTime']))
 
     KPI_DICT['throttle'], KPI_DICT['longAcc'], KPI_DICT['latAcc'], KPI_DICT['brakePresF'], \
     KPI_DICT['lapTime'] = throttle, longAcc, latAcc, brakePresF, lapTime
@@ -40,36 +41,32 @@ def lambda_handler(event, context):
     tasks: list = []
     loop = asyncio.get_event_loop()
     async_res: dict = {}
+
+    # asynchronous calculate rolling mean
     for kpi in KPI_DICT.keys():
-        _t: Future = asyncio.ensure_future(async_rolling_mean(l=KPI_DICT[kpi], N=NOP))
-        name: str = f"filtered_{kpi}"
-        _t.add_done_callback(functools.partial(asyncCallback, kpiName=name, _dict=async_res))
-        tasks.append(_t)
+        _t: Future = asyncio.ensure_future(async_rolling_mean(l=KPI_DICT[kpi], N=NOP))  # create the async task to
+        # calculate rolling mean
+        name: str = f"filtered_{kpi}"  # give th task name filtered_{"kpi_name}
+        _t.add_done_callback(functools.partial(asyncCallback, kpiName=name, _dict=async_res))  # add callback function
+        # to be call when task is done
+        tasks.append(_t)  # add task to task list
 
     loop.run_until_complete(asyncio.wait(tasks))
     loop.close()
 
-    calculate(filteredListsDict=async_res)
-    """
-    throttleSmooth: int = 0.0
-    count: int = 0
-    for index, i in enumerate(async_res['filtered_throttle']):
-        throttleSmooth += float(abs(throttle[index] - i))
-        count += 1
-    """
-    # print(f"sum : {sum(throttle)} {sum(filtered_thr)}")§
-    # print(len(quads))
+    kpiDict: {} = calculate(filteredListsDict=async_res)  # calculate KPI
     return {
         "statusCode": 200,
         "body": json.dumps({
             "kpi": kpi_name,
-            "value": "throttleSmooth / count",
+            "value": kpiDict,
             # "location": ip.text.replace("\n", "")
         }),
     }
 
 
 def calculate(filteredListsDict: dict, lapName='test') -> {}:
+    throttle = KPI_DICT['throttle']
     diff = []
 
     thr_smooth = 0
@@ -88,25 +85,24 @@ def calculate(filteredListsDict: dict, lapName='test') -> {}:
     trl_acc = 0
     trl_acc_count = 0
     # assign all async results to arrays
-    filtered_throttle, filtered_longAcc, filtered_latAcc, filtered_brakePresF, \
-    filtered_lapTime = filteredListsDict['filtered_throttle'], \
-                       filteredListsDict['filtered_longAcc'], \
-                       filteredListsDict['filtered_latAcc'], \
-                       filteredListsDict['filtered_brakePresF'], \
-                       filteredListsDict['filtered_lapTime']
+    filtered_throttle = filteredListsDict['filtered_throttle']
+    filtered_longAcc = filteredListsDict['filtered_longAcc']
+    filtered_latAcc = filteredListsDict['filtered_latAcc']
+    filtered_brakePresF = filteredListsDict['filtered_brakePresF']
+    filtered_lapTime = filteredListsDict['filtered_lapTime']
 
     brake_diff = vector_diff(vector=filtered_brakePresF, time_vector=filtered_lapTime)  # create braking diff array
     # todo: create a function for this part
     for index, i in enumerate(filtered_throttle):
 
         # Throttle smoothness
-        throttle_diff = float(abs(KPI_DICT['throttle'][index] - i))
+        throttle_diff = float(abs(throttle[index] - i))
         diff.append(throttle_diff)
         thr_smooth += throttle_diff
 
         # Throttle efficiency
-        if filtered_longAcc[index] > 0 and filtered_throttle[index] > 5:
-            thr_eff += filtered_longAcc[index] / filtered_throttle[index]
+        if filtered_longAcc[index] > 0 and throttle[index] > 5:
+            thr_eff += filtered_longAcc[index] / throttle[index]
             thr_count += 1
 
         # Braking efficiency
@@ -125,14 +121,22 @@ def calculate(filteredListsDict: dict, lapName='test') -> {}:
             brk_stb_count += 1
 
         # Trail Acceleration
-        if filtered_throttle[index] > 5 and abs(filtered_latAcc[index]) > 0.1:
-            trl_acc += filtered_throttle[index] * abs(filtered_latAcc[index])
+        if throttle[index] > 5 and abs(filtered_latAcc[index]) > 0.1:
+            trl_acc += throttle[index] * abs(filtered_latAcc[index])
             trl_acc_count += 1
 
     if thr_count == 0 or len(diff) == 0 or brk_count == 0 \
             or brk_agr_count == 0 or brk_stb_count == 0 or trl_acc_count == 0:
         print("""WARNING:\tNOT ENOUGH DATA TO CALCULATE LAP: {} KPI.""".format(lapName))
         return
+
+    return {"throttleSmoothness": thr_smooth / len(diff),
+            "throttleEfficiency": thr_eff / thr_count,
+            "brakeEfficiency": brk_eff / brk_count,
+            "brakepresAggression": brk_agr / brk_agr_count,
+            "trailBraking": brk_stb / brk_stb_count,
+            "trailAcceleration": trl_acc / trl_acc_count
+            }
 
 
 """
@@ -196,9 +200,9 @@ async def async_rolling_mean(*, l, N) -> []:
         y = np.zeros((len(l),))
 
         for ctr in range(len(l)):
-            y[ctr] = np.sum(l[ctr:(ctr + N)])
+            y[ctr] = np.sum(l[ctr:(ctr + N)])  # get the moving sum according to the rolling windows
 
-        return y / N
+        return y / N  # davide each of sum's in the window size
 
     try:
         return list(runningMean())  # np.convolve(l, np.ones((N,)) / N, mode='valid'))  #
