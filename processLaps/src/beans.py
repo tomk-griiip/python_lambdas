@@ -92,8 +92,6 @@ class Constant(object):
             self.__dict__[key] = value
 
 
-
-
 """
 @:type Lap represent full lap object 
 """
@@ -133,9 +131,14 @@ class Lap(Constant):
         # init the constant property in order that no aether class will override  them
         self.set_const_list(['MAX_ACC_PERCENT', 'FULL_LAP_FLOOR', 'FULL_LAP_CELL', 'PART_LAP_FLOOR'])
 
+    def add_columns_to_columns_to_update(self, d: {}):  # marge new dict to columns to update dict
+        self._columns_to_update = {**self._columns_to_update, **d}
+
+    def get_classification(self):
+        return self._classification
+
     def set_classification(self, classification: str):
-        self._classification = classification
-        self._columns_to_update['classification'] = classification
+        self._classification = self._columns_to_update['classification'] = classification
 
     """
     @:param an api wrapper class (class that communicate with the RDS)

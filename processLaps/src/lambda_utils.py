@@ -12,7 +12,7 @@ from botocore.exceptions import ClientError
 import os
 import json
 import asyncio
-
+import griiip_const as const
 dynamoDb = boto3.resource('dynamodb')
 lambdaClient = boto3.client('lambda')
 
@@ -166,8 +166,13 @@ def calculate_kpi(lap, config):
             invokeLambdaKpi(lambdaName=task['lambda'], payload=_payload)))  # , payload=lap.getLapQuads())))
 
     done, _ = loop.run_until_complete(asyncio.wait(tasks))
-
+    _kpi_dict: {} = {}
     for fut in done:
-        res = json.loads(fut.result()['body'])
-        print("return value is {}".format(res['value']))
+        try:
+            res = json.loads(fut.result()['body'])['value']
+            _kpi_dict = {**_kpi_dict, **res}
+            print("return value is {}".format(res['value']))
+        except KeyError as ke:
+            print(f"key error in coroutine result is: \n {fut.result()}")
     loop.close()
+    return _kpi_dict

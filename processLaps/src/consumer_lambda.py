@@ -7,6 +7,8 @@ from interfaces import Iclassifier
 import traceback
 from lambda_utils import *
 
+import sys
+
 dynamoDb = boto3.resource('dynamodb')
 laps_from_dynamo_table = os.environ['ddb_lap_table']
 
@@ -74,8 +76,12 @@ def handle_lap(record: dict):
         lap.set_track_length(ApiWrapper)  # set the length of the track that the lap is on
         lapClass: str = classifyLap(lap=lap, classifier=ruleBaseClassifier)  # classify the lap
         lap.set_classification(classification=lapClass)  # set the class to the lap
-        calculate_kpi(lap, conf)
+
+        if lapClass in conf.classify_that_calc_kpi_list:  # if the classification need kpi calculation
+            kpi: {} = calculate_kpi(lap, conf)  # calculate kpi
+            lap.add_columns_to_columns_to_update(kpi)  # add the result to columns to update
         pass
+
     except (RunDataException, DriverLapsException, TracksException) as griiip_e:
         print(f"LAP: {lapId} IS MISSING DATA IN MYSQL, Exception raised is: {griiip_e}")
         raise griiip_e

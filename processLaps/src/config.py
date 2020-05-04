@@ -131,8 +131,11 @@ class Config:
 
     fieldToCalculateKpi: dict = {
         'griiipKpi': {'lambda': 'test_tom',
-                               'fieldsList': ['throttle', 'longAcc', 'latAcc', 'brakePresF', 'lapTime']}
+                      'fieldsList': ['throttle', 'longAcc', 'latAcc', 'brakePresF', 'lapTime']}
     }
+    # lap classification that need kpi calculation
+    # Todo remove NON_LEGIT its just for develop peruse
+    classify_that_calc_kpi_list: [] = [const.classifications.COMPETITIVE, const.classifications.NON_SUCCESSFUL]
 
     def __init__(self):
         pass

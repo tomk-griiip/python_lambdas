@@ -1,6 +1,6 @@
 from interfaces import Iclassifier
 from griiip_exeptions import *
-
+from griiip_const import classifications as const
 """
 classify laps according to predefine set of rules
 """
@@ -61,15 +61,15 @@ class RuleBaseClassifier(Iclassifier):
         try:
             if max_acc_comb is None:
                 # No accCombined data yet for this
-                classification = "Competitive"
+                classification = const.COMPETITIVE
             else:
                 # set the lap to competitive based on the combined accelerations of the lap (per Track, per driver)
                 if acc_comb > self.lap.MAX_ACC_PERCENT * max_acc_comb and self.lap._low_speed_time < 1:
-                    classification = "Competitive"
+                    classification = const.COMPETITIVE
                 elif acc_comb > self.lap.MAX_ACC_PERCENT * max_acc_comb and 1 <= self.lap._low_speed_time <= 30:
-                    classification = "Non-Successful"
+                    classification = const.NON_SUCCESSFUL
                 else:
-                    classification = 'NonCompetitive'
+                    classification = const.NON_COMPETITIVE
         except Exception as e:
             print(f" Exception raised in class RuleBaseClassifier._classify_full_lap"
                   f" {e}")
