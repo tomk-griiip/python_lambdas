@@ -25,8 +25,13 @@ class DynamoDbBadStatusCode(Exception):
 
 
 class KwargsMissingArgException(Exception):
-    def __init__(self, function: str, missingArgs:[]):
+    def __init__(self, function: str, missingArgs: []):
         separator: str = ', '
         message = f"missing args exception function {function} missing args :" \
                   f"{separator.join(missingArgs)}"
         super().__init__(message)
+
+
+class KpiLambdaError(Exception):
+    def __init__(self, acc: str, e: Exception = None):
+        message = f"lambda that calculate kpi for account {acc} raise error: \n {e}"

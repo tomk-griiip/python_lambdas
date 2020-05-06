@@ -128,14 +128,17 @@ class Config:
         "__low_speed_time": get_low_speed_time
 
     }
-
-    fieldToCalculateKpi: dict = {
-        'griiipKpi': {'lambda': 'test_tom',
-                      'fieldsList': ['throttle', 'longAcc', 'latAcc', 'brakePresF', 'lapTime']}
+    """
+    lambdas that calculate kpi key => the account name each account will have different kpi and different lambdas
+    value = > list of [{lambda: {lambda name}, params:{dict of params to pass to the lambda}}]
+    """
+    lambdasToCalculateKpi: dict = {
+        'G1': [{'lambda': 'test_tom11', 'params': {}}]
     }
     # lap classification that need kpi calculation
     # Todo remove NON_LEGIT its just for develop peruse
-    classify_that_calc_kpi_list: [] = [const.classifications.COMPETITIVE, const.classifications.NON_SUCCESSFUL]
+    classify_that_calc_kpi_list: [] = [const.classifications.COMPETITIVE, const.classifications.NON_SUCCESSFUL,
+                                       const.classifications.NON_LEGIT]
 
     def __init__(self):
         pass
