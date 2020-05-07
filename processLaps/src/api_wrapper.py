@@ -9,8 +9,11 @@ import requests
 
 
 class ApiWrapper:
-    api_address = os.environ['griiip_api_url']
-    api_key = os.environ['griiip_api_key']
+
+    @classmethod
+    def __init__(cls, **kwargs):
+        cls.api_address = kwargs['api_address']
+        cls.api_key = kwargs['api_key']
 
     @classmethod
     def get(cls, url, **kwargs):
@@ -28,4 +31,3 @@ class ApiWrapper:
     def post(cls, url, **kwargs):
         body = kwargs['json']
         return requests.post(cls.api_address + url, json=body, headers={'x-api-key': cls.api_key})
-

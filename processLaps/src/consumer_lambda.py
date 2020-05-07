@@ -1,13 +1,13 @@
 from api_wrapper import ApiWrapper
 from beans import *
-from griiip_exeptions import ApiException, RunDataException, DriverLapsException, TracksException
+from griiip_exeptions import ApiException, RunDataException, DriverLapsException, TracksException, KpiLambdaError
 from config import config as conf
 from classifiers import ruleBaseClassifier
 from interfaces import Iclassifier
 import traceback
 from lambda_utils import *
-from griiip_exeptions import KpiLambdaError
-import sys
+from griiip_const import net
+from db_wrapper import db
 
 dynamoDb = boto3.resource('dynamodb')
 laps_from_dynamo_table = os.environ['ddb_lap_table']
@@ -66,13 +66,18 @@ def lambda_handler(event, context):
 
 def handle_lap(record: dict):
     lapId = record["lapId"]
-    lapQuadsArr: [] = retrieveLapRunDataLapQuads(lapId)
+    # config the request for API to get the run data
+    limit, page = int(os.environ['runDataRetrieveLimit']), int(os.environ['runDataPaging'])
+    runData: [] = db.retrieveLapRunDataLapQuads(lapId=lapId, limit=limit, page=page)
+
     # create object that represent full lap
     for key, value in conf.fieldsFromSqsMessage.items():
         conf.driverLapFieldDict[key] = record[value]
+
+    # create Lap object that represent the current lap that being process
+    lap = Lap(runData=runData, funcToField=conf.driverLapFuncToCalcField, **conf.driverLapFieldDict)
+
     try:
-        # create Lap object that represent the current lap that being process
-        lap = Lap(lap_quads=lapQuadsArr, funcToField=conf.driverLapFuncToCalcField, **conf.driverLapFieldDict)
         lap.set_track_length(ApiWrapper)  # set the length of the track that the lap is on
         lapClass: str = classifyLap(lap=lap, classifier=ruleBaseClassifier)  # classify the lap
         lap.set_classification(classification=lapClass)  # set the class to the lap
@@ -80,7 +85,7 @@ def handle_lap(record: dict):
         if lapClass in conf.classify_that_calc_kpi_list:  # if the classification need kpi calculation
             try:
                 kpi: {} = calculate_kpi(lap, conf)  # calculate kpi
-                lap.add_columns_to_columns_to_update(kpi)  # add the result to columns to update
+                lap.setColumnsToUpdate(kpi)  # add the result to columns to update
             except KpiLambdaError as kpiError:
                 print(kpiError)
 
@@ -92,8 +97,10 @@ def handle_lap(record: dict):
         raise e
 
     finally:
-        pass
-    # Todo insert to mysql db
+        columnToUpdate: {} = lap.getColumnToUpdate()
+        if len(columnToUpdate.keys()) == 0:  # if there is no items to update return
+            return
+            # Todo insert to mysql db
     pass
 
 
@@ -103,14 +110,10 @@ from 'driverlapsrundata' Table in RDS
 @:param lapId the lapId to get its all data from driverLapsRunData table
 @:return array of type RunDataRow each object in the array is one record 
 of the lapRunData
-"""
 
 
-def retrieveLapRunDataLapQuads(lapId: str) -> []:
-    # config the request for API to get the run data
-    limit, page = int(os.environ['runDataRetrieveLimit']), \
-                  int(os.environ['runDataPaging'])
 
+def retrieveLapRunDataLapQuads(lapId: str, limit: int, page: int) -> []:
     payload = {'lapName': lapId, 'page': page, 'limit': limit}
     # call API to get runData
     runData: dict = ApiWrapper.get("/rundata/", params=payload).json()['data']
@@ -141,6 +144,17 @@ def retrieveLapRunDataLapQuads(lapId: str) -> []:
 
     # create array of RunDataRow bean object
     return [RunDataRow(**runData[i]) for i in range(len(runData))]
+
+"""
+
+
+def updateDriverLap(self, columns_to_update: {}, lap_name: str):
+    res = ApiWrapper.put(net.UPDATE_DRIVER_LAP_URL, json={**columns_to_update, "lapName": lap_name})
+
+    if res.status_code == net.OK:
+        return net.SUCCESS
+    else:
+        return net.FAILURE  # Consider raising exception instead
 
 
 # wrapper function to classify lap

@@ -110,9 +110,10 @@ class Lap(Constant):
     _columns_to_update: dict = {}
     _classification: str = None
 
-    def __init__(self, lap_quads: [], funcToField: dict, **entries) -> object:
+    def __init__(self, runData: [], funcToField: dict, **entries) -> object:
         self.__dict__.update(entries)  # create the object fields according to configuration
-        self.__lap_quads = lap_quads  # set the quad's list of the lap
+        # create array of RunDataRow bean object
+        self.__lap_quads: [] = [RunDataRow(**runData[i]) for i in range(len(runData))]
 
         # calculate fields value by functions from configuration
         for key, value in funcToField.items():
@@ -131,8 +132,11 @@ class Lap(Constant):
         # init the constant property in order that no aether class will override  them
         self.set_const_list(['MAX_ACC_PERCENT', 'FULL_LAP_FLOOR', 'FULL_LAP_CELL', 'PART_LAP_FLOOR'])
 
-    def add_columns_to_columns_to_update(self, d: {}):  # marge new dict to columns to update dict
+    def setColumnsToUpdate(self, d: {}):  # marge new dict to columns to update dict
         self._columns_to_update = {**self._columns_to_update, **d}
+
+    def getColumnToUpdate(self) -> {}:
+        return self._columns_to_update
 
     def get_classification(self):
         return self._classification

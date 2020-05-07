@@ -33,5 +33,27 @@ class ClassificationConst(object):
         return 'NonLegit'
 
 
-classifications = ClassificationConst()
+class NetConst(object):
+    @constant
+    def OK():
+        return 200
 
+    @constant
+    def SUCCESS():
+        return True
+
+    @constant
+    def FAILURE():
+        return False
+
+    @constant
+    def UPDATE_DRIVER_LAP_URL():
+        return "/driverlaps/"
+
+    @constant
+    def RUNDATA_URL():
+        return "/rundata/"
+
+
+classifications = ClassificationConst()
+net = NetConst()
