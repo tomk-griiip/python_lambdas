@@ -1,3 +1,4 @@
+import asyncio
 from builtins import type
 
 import math
@@ -9,11 +10,13 @@ from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 # import beans as beans
 # from beans import Lap, RunDataRowEncoder
+from async_manager import *
 import os
 import json
-import asyncio
+
 import griiip_const as const
 from griiip_exeptions import KpiLambdaError
+
 dynamoDb = boto3.resource('dynamodb')
 lambdaClient = boto3.client('lambda')
 
@@ -146,51 +149,47 @@ def calculate_acc_comb(lat_sum, long_sum, num_of_items):
     return acc_comb
 
 
-"""
-Parameters lap : the lap
-config: the config object
-accountName: the account that process lap run on now
-(each account have different kpi so different kpi lambda
-"""
-
-
-def calculate_kpi(lap, config, accountName="G1"):
-    lapId = lap.getLapName()
-    rows: [] = lap.getLapQuads()
-    num_of_points: int = environ('kpi_num_of_points', int)
-    tasks: list = []
-    loop = asyncio.get_event_loop()
-
-    limit, page = environ('runDataRetrieveLimit', int), environ('runDataPaging', int)
-
-    _payload = {'lapName': lap.getLapName(), 'page': page, 'limit': limit, }
-
-    async def invokeLambdaKpi(lambdaName: str, payload={}) -> {}:
-        res = lambdaClient.invoke(FunctionName=lambdaName, InvocationType='RequestResponse',
-                                  Payload=json.dumps({'lambdaName': lambdaName, 'payload': payload}))
-        return json.loads(res['Payload'].read())
-
-    for task in config.lambdasToCalculateKpi[accountName]:
-        _payload['params'] = task['params']
-        tasks.append(loop.create_task(
-            invokeLambdaKpi(lambdaName=task['lambda'], payload=_payload)))  # , payload=lap.getLapQuads())))
-    _kpi_dict: {} = {}
-
+def calculate_kpi(loop, **args):  # lap, config, loop, accountName="G1"):
+    """
+    Parameters:
+    loop async_io.eventLoop
+    lap : the lap
+    config: the config object
+    accountName: the account that process lap run on now
+    (each account have different kpi so different kpi lambda
+    Raises KpiLambdaError
+    """
     try:
+        lapId, config,  = args['lapId'], args['config']
+        accountName = args['accountName'] if 'accountName' in args else 'G1'
+        num_of_points: int = environ('kpi_num_of_points', int)
+        tasks: list = []
+
+        limit, page = environ('runDataRetrieveLimit', int), environ('runDataPaging', int)
+
+        _payload = {'lapName': lapId, 'page': page, 'limit': limit, }
+
+        async def invokeLambdaKpi(lambdaName: str, payload={}) -> {}:
+            res = lambdaClient.invoke(FunctionName=lambdaName, InvocationType='RequestResponse',
+                                      Payload=json.dumps({'lambdaName': lambdaName, 'payload': payload}))
+            return json.loads(res['Payload'].read())
+
+        for task in config.lambdasToCalculateKpi[accountName]:
+            _payload['params'] = task['params']
+            tasks.append(loop.create_task(
+                invokeLambdaKpi(lambdaName=task['lambda'], payload=_payload)))  # , payload=lap.getLapQuads())))
+        _kpi_dict: {} = {}
+
         done, _ = loop.run_until_complete(asyncio.wait(tasks))
-
         for fut in done:
-            try:
-                res = json.loads(fut.result()['body'])['value']
-                _kpi_dict = {**_kpi_dict, **res}
-                print("return value is {}".format(res['value']))
+            res = json.loads(fut.result()['body'])['value']
+            _kpi_dict = {**_kpi_dict, **res}
 
-            except KeyError as ke:
-                print(f"lambda that calculate kpi for account {accountName} raise error: \n {e}")
+        return _kpi_dict
+
+    except KeyError as ke:
+        raise KpiLambdaError(acc=accountName, e=ke)
 
     except Exception as e:
         raise KpiLambdaError(acc=accountName, e=e)
 
-    finally:
-        loop.close()
-        return _kpi_dict

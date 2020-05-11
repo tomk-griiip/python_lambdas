@@ -35,3 +35,4 @@ class KwargsMissingArgException(Exception):
 class KpiLambdaError(Exception):
     def __init__(self, acc: str, e: Exception = None):
         message = f"lambda that calculate kpi for account {acc} raise error: \n {e}"
+        super().__init__(message)

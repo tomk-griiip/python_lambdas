@@ -12,18 +12,27 @@ from db_wrapper import db
 dynamoDb = boto3.resource('dynamodb')
 laps_from_dynamo_table = os.environ['ddb_lap_table']
 
-"""
-lambda_handler 
-@:returns ensure{
-status code : 200 o.k
-              501 griiip custom error 
-              502 type error
-              500 general error
-message: the response message
-"""
-
 
 def lambda_handler(event, context):
+    """
+
+    Parameters
+    ----------
+    event
+    context
+
+    Returns
+    -------
+    {
+        status code : 200 o.k
+                      501 griiip custom error
+                      502 type error
+                      500 general error
+        message: the response message
+    }
+    """
+    t = environ('test')
+    print(t)
     ERROR_PREFIX: str = "ERROR::"
     res_message: str = "consumerOk"
     trace: str = ""
@@ -83,11 +92,13 @@ def handle_lap(record: dict):
         lap.set_classification(classification=lapClass)  # set the class to the lap
 
         if lapClass in conf.classify_that_calc_kpi_list:  # if the classification need kpi calculation
-            try:
-                kpi: {} = calculate_kpi(lap, conf)  # calculate kpi
-                lap.setColumnsToUpdate(kpi)  # add the result to columns to update
-            except KpiLambdaError as kpiError:
-                print(kpiError)
+            with AsyncLoopManager() as loop:
+                kpi: {} = calculate_kpi(loop=loop, lapId=lap.getLapName(), config=conf)  # calculate kpi
+            lap.setColumnsToUpdate(kpi)  # add the result to columns to update
+
+    except KpiLambdaError as kpiError:
+        raise KpiLambdaError
+        print(kpiError)
 
     except (RunDataException, DriverLapsException, TracksException) as griiip_e:
         print(f"LAP: {lapId} IS MISSING DATA IN MYSQL, Exception raised is: {griiip_e}")
@@ -98,10 +109,9 @@ def handle_lap(record: dict):
 
     finally:
         columnToUpdate: {} = lap.getColumnToUpdate()
-        if len(columnToUpdate.keys()) == 0:  # if there is no items to update return
-            return
-            # Todo insert to mysql db
-    pass
+        if len(columnToUpdate.keys()) > 0:  # if there is no items to update return
+            db.updateDriverLap(columns_to_update=lap.getColumnToUpdate(), lap_name=lap.getLapName())
+
 
 
 """
@@ -147,7 +157,7 @@ def retrieveLapRunDataLapQuads(lapId: str, limit: int, page: int) -> []:
 
 """
 
-
+"""
 def updateDriverLap(self, columns_to_update: {}, lap_name: str):
     res = ApiWrapper.put(net.UPDATE_DRIVER_LAP_URL, json={**columns_to_update, "lapName": lap_name})
 
@@ -155,6 +165,7 @@ def updateDriverLap(self, columns_to_update: {}, lap_name: str):
         return net.SUCCESS
     else:
         return net.FAILURE  # Consider raising exception instead
+"""
 
 
 # wrapper function to classify lap
