@@ -1,41 +1,73 @@
-from api_wrapper import ApiWrapper
-from griiip_const import net
+from api_wrapper import *
+from griiip_const import net, errorMessages
 from griiip_exeptions import RunDataException, ApiException
+from interfaces import IApiWrapper, IDb
 from lambda_utils import environ
+import pymysql
 
 
-class DbMeta(type):
-    """
-    Db meta class to implement mandatory method in any type of class
-    that should implement the process laps db management class
-    """
-    def __instancecheck__(self, instance):
-        return self.__subclasscheck__(type(instance))
+class DbPyMySQL(IDb):
+    def __init__(self, host, user, passwd, dbname):
 
-    def __subclasscheck__(self, subclass):
-        return (hasattr(subclass, 'retrieveLapRunDataLapQuads') and
-                callable(subclass.retrieveLapRunDataLapQuads) and
-                hasattr(subclass, 'updateDriverLap') and
-                callable(subclass.updateDriverLap))
+        self.dbHandle = None
+        self.host = host
+        self.user = user
+        self.passwd = passwd
+        self.dbname = dbname
+        self.bConned = self._connect()
+
+    def __del__(self):
+        self.disconnect_to_mysql()
+        print(f"disconnect_to_mysql() success, host={self.host}, user={self.user}, db={self.dbname}")
+
+    def _connect(self):
+        try:
+            if self.bConned:
+                return True
+            self.dbHandle = pymysql.connect(host=self.host, user=self.user, password=self.passwd, db=self.dbname)
+            return True
+
+        except Exception as e:
+            print(f"Connect to MySQL Server Failed, host=%s, user=%s, db=%s, port=%u, errmsg=%s")
+            return False
+
+    def disconnect_to_mysql(self):
+        try:
+            if self.bConned and self.dbHandle is not None:
+                self.dbHandle.close()
+                self.dbHandle = None
+                self.bConned = False
+
+        except Exception as e:
+            print(f"Disconnect to MySQL Server Failed, errmsg={e}")
+
+    def query(self, sql_cmd):
+        pass
+
+    def insert(self, sql_cmd):
+        pass
+
+    def update(self, sql_cmd):
+        pass
+
+    def delete(self, sql_cmd):
+        pass
+
+    def getRunData(self, lapId, **payload) -> []:
+        pass
+
+    def updateDriverLap(self, columns_to_update: {}, lap_name: str) -> bool:
+        pass
 
 
-class Idb(metaclass=DbMeta):
-    """This interface is used for concrete classes to inherit from.
-    There is no need to define the DbMeta methods as any class
-    as they are implicitly made available via .__subclasscheck__().
-    """
+class DbWithApiGetAway(IDb):
 
-    pass
+    def __init__(self, *, apiWrapper: IApiWrapper):
+        if not isinstance(apiWrapper, IApiWrapper):
+            raise InterfaceImplementationException("IApiWrapper")
+        self.apiWrapper = apiWrapper
 
-
-class DbApi:
-    apiWrapper = None
-
-    def _init__(self, *, api_url, api_key):
-
-        self.apiWrapper = ApiWrapper(api_address=api_url, api_key=api_key)
-
-    def retrieveLapRunDataLapQuads(self, lapId: str, limit: int, page: int) -> []:
+    def getRunData(self, lapId, **payload) -> []:
         """
         function that get all the runData of the lap By lapId
         from 'driverlapsrundata' Table in RDS
@@ -50,8 +82,8 @@ class DbApi:
         array of type RunDataRow each object in the array is one record
         of the lapRunData
         """
-        payload = {'lapName': lapId, 'page': page, 'limit': limit}
         # call API to get runData
+        payload['lapName'] = lapId
         runData: dict = self.apiWrapper.get(net.RUNDATA_URL, params=payload).json()['data']
 
         if len(runData) == 0:
@@ -105,5 +137,19 @@ class DbApi:
         else:
             return net.FAILURE  # Consider raising exception instead
 
+    def query(self, sql_cmd):
+        pass
 
-db = DbApi(api_url=environ('griiip_api_url'), api_key=environ('griiip_api_key'))
+    def insert(self, sql_cmd):
+        pass
+
+    def update(self, sql_cmd):
+        pass
+
+    def delete(self, sql_cmd):
+        pass
+
+
+api = ApiWrapper(api_address=environ('griiip_api_url'), api_key=environ('griiip_api_key'))
+
+db_api = DbWithApiGetAway(apiWrapper=api)

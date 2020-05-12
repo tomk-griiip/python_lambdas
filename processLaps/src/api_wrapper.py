@@ -1,14 +1,16 @@
+import abc
 import os
 import requests
+from griiip_exeptions import InterfaceImplementationException
 
 
 #
-# Shlomi TODO: Please use this class in order to do the connections to the API
 # It adds the api key and the base address to every request so you dont need to place it all over the code
 # see examples
+from interfaces import IApiWrapper
 
 
-class ApiWrapper:
+class ApiWrapper(IApiWrapper):
 
     @classmethod
     def __init__(cls, **kwargs):

@@ -1,22 +1,30 @@
-from interfaces import Iclassifier
 from griiip_exeptions import *
 from griiip_const import classifications as const
-"""
-classify laps according to predefine set of rules
-"""
+from interfaces import IClassifier
 
 
-class RuleBaseClassifier(Iclassifier):
+class RuleBaseClassifier(IClassifier):
+    """
+    classify laps according to predefine set of rules
+    """
     lap, api = None, None
 
-    """
-    @:function classify return str classification of the lap 
-    @:param lap LapBean object that represent lap 
-    @:param api a class with function that represent missing data api from db
-    pass inside **kwargs
-    """
-
     def classify(self, lap, **kwargs) -> str:
+        """
+
+        Parameters
+        ----------
+        lap
+        LapBean object that represent lap
+
+        kwargs
+        api a class with function that represent missing data api from db
+            pass inside **kwargs
+
+        Returns
+        -------
+        classification of the lap
+        """
         if 'api' not in kwargs:
             raise KwargsMissingArgException(function='RuleBaseClassifier.classify',
                                             missingArgs=['api'])
@@ -40,22 +48,23 @@ class RuleBaseClassifier(Iclassifier):
 
         # Partial laps
         elif lap.PART_LAP_FLOOR * track_length < distance < lap.FULL_LAP_FLOOR * track_length and self._is_partial_lap():
-            classification = 'Partial'
+            classification = const.PARTIAL
 
         # Non legit laps
         else:
-            classification = 'NonLegit'
+            classification = const.NON_LEGIT
 
         return classification
 
-    """
-    @:function _classify_full_lap
-    classifies the lap to competitive or non competitive according to the
-    avg performance of the driver in this particular lap compared with the
-    best performance in the lap's track
-    """
-
     def _classify_full_lap(self) -> str:
+        """
+
+        Returns
+        -------
+        classifies the lap to competitive or non competitive according to the
+        avg performance of the driver in this particular lap compared with the
+        best performance in the lap's track
+        """
         max_acc_comb, acc_comb = self.lap.max_acc_comb, getattr(self.lap, 'accCombinedAvg')
         classification: str = None
         try:
@@ -76,30 +85,33 @@ class RuleBaseClassifier(Iclassifier):
         finally:
             return classification
 
-    """
-    @:function _is_partial_lap
-    @:returns True if is partial lap False if not
-    """
-
     def _is_partial_lap(self) -> bool:
+        """
+
+        Returns
+        -------
+        True if is partial lap False if not
+        """
         acc_comb, max_acc_comb = getattr(self.lap, 'accCombinedAvg'), getattr(self.lap, 'max_acc_comb')
         return max_acc_comb is None or acc_comb > self.lap.MAX_ACC_PERCENT * max_acc_comb
 
-    """
-    @:function get_max_acc_comb  
-    @:params:
-    @:lapId = the processed lap id 
-    @: user_id  = the lap user id 
-    @: track_id = the track where the lap is running
-    @: lap_start_date = the lap start date
-    @: api = a class white a get function that get the above params and return the 
-    max accelerator combine (api is some api for calculation now is the api get away )
-    
-    @:returns the max accelerator combine of this lap 
-    """
-
     @staticmethod
     def get_max_acc_comb(*, lapId, user_id, track_id, lap_start_date, api) -> float:
+        """
+
+        Parameters
+        ----------
+        lapId
+        user_id
+        track_id
+        lap_start_date
+        api
+        a class white a get function that get the above params and return the
+            max accelerator combine (api is some api for calculation now is the api get away )
+        Returns
+        -------
+        the max accelerator combine of this lap
+        """
         acc_comb: float = 0.0
         payload = {'userId': user_id, 'trackId': track_id, 'startDate': lap_start_date}
         try:

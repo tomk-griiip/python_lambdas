@@ -1,13 +1,15 @@
 from api_wrapper import ApiWrapper
 from beans import *
-from griiip_exeptions import ApiException, RunDataException, DriverLapsException, TracksException, KpiLambdaError
+from griiip_exeptions import *
 from config import config as conf
 from classifiers import ruleBaseClassifier
-from interfaces import Iclassifier
+from classifiers import IClassifier
 import traceback
+
+from interfaces import IDb
 from lambda_utils import *
-from griiip_const import net
-from db_wrapper import db
+from griiip_const import net, classifications, errorMessages
+from db_wrapper import db_api as db
 
 dynamoDb = boto3.resource('dynamodb')
 laps_from_dynamo_table = os.environ['ddb_lap_table']
@@ -77,7 +79,7 @@ def handle_lap(record: dict):
     lapId = record["lapId"]
     # config the request for API to get the run data
     limit, page = int(os.environ['runDataRetrieveLimit']), int(os.environ['runDataPaging'])
-    runData: [] = db.retrieveLapRunDataLapQuads(lapId=lapId, limit=limit, page=page)
+    runData: [] = db.getRunData(lapId=lapId, limit=limit, page=page)
 
     # create object that represent full lap
     for key, value in conf.fieldsFromSqsMessage.items():
@@ -97,11 +99,11 @@ def handle_lap(record: dict):
             lap.setColumnsToUpdate(kpi)  # add the result to columns to update
 
     except KpiLambdaError as kpiError:
+        print(f"{lapId} {errorMessages.MYSQL_MISSING_DATA} {kpiError}")
         raise KpiLambdaError
-        print(kpiError)
 
     except (RunDataException, DriverLapsException, TracksException) as griiip_e:
-        print(f"LAP: {lapId} IS MISSING DATA IN MYSQL, Exception raised is: {griiip_e}")
+        print(f"{lapId} {errorMessages.MYSQL_MISSING_DATA} {griiip_e}")
         raise griiip_e
 
     except Exception as e:
@@ -113,61 +115,21 @@ def handle_lap(record: dict):
             db.updateDriverLap(columns_to_update=lap.getColumnToUpdate(), lap_name=lap.getLapName())
 
 
+def classifyLap(lap: Lap, classifier: IClassifier) -> str:
+    """
+    wrapper function to classify lap
+    Parameters
+    ----------
+    lap
+    a lap object to classify
+    classifier
+    a class that implement I_classifier
+    Returns
+    -------
+    classification
+    """
 
-"""
-@retrieveLapRunData : function that get all the runData of the lap By lapId
-from 'driverlapsrundata' Table in RDS 
-@:param lapId the lapId to get its all data from driverLapsRunData table
-@:return array of type RunDataRow each object in the array is one record 
-of the lapRunData
+    if not issubclass(classifier, IClassifier):
+        raise InterfaceImplementationException('IClassifier')
 
-
-
-def retrieveLapRunDataLapQuads(lapId: str, limit: int, page: int) -> []:
-    payload = {'lapName': lapId, 'page': page, 'limit': limit}
-    # call API to get runData
-    runData: dict = ApiWrapper.get("/rundata/", params=payload).json()['data']
-
-    if len(runData) == 0:
-        raise RunDataException
-
-    # some times the first rows is mistaken distance data
-    # and need to remove them from the run data ro
-    def removed_first_bad_distance_rows() -> int:
-        glitches, total_rows, g = 0, len(runData), 0
-        for row_id in range(total_rows - 1):
-            # In this case, the row 'distance' value is bigger then the next row 'distance' value.
-            if runData[row_id]['distance'] > runData[row_id + 1]['distance']:
-                glitches += 1
-            else:
-                break
-        return glitches
-
-    # the number of glitches in thr beginning of the lap
-    num_dist_glit: int = removed_first_bad_distance_rows()
-    if num_dist_glit > 0:
-        print(f"FOUND {num_dist_glit} BAD ROWS FOR LAP {lapId}"
-              f"\nLAP FIRST ROWS DISTANCE IS BIGGER THEN THE NEXT ROWS")
-
-    runData = runData[num_dist_glit:]  # remove the rows with the distance glitches in the
-    # beginning
-
-    # create array of RunDataRow bean object
-    return [RunDataRow(**runData[i]) for i in range(len(runData))]
-
-"""
-
-"""
-def updateDriverLap(self, columns_to_update: {}, lap_name: str):
-    res = ApiWrapper.put(net.UPDATE_DRIVER_LAP_URL, json={**columns_to_update, "lapName": lap_name})
-
-    if res.status_code == net.OK:
-        return net.SUCCESS
-    else:
-        return net.FAILURE  # Consider raising exception instead
-"""
-
-
-# wrapper function to classify lap
-def classifyLap(lap: Lap, classifier: Iclassifier = Iclassifier()) -> str:
     return classifier.classify(lap=lap, api=ApiWrapper)

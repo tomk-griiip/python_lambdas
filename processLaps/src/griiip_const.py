@@ -55,5 +55,16 @@ class NetConst(object):
         return "/rundata/"
 
 
+class ErrorMessages:
+    @constant
+    def MYSQL_MISSING_DATA():
+        return "LAP IS MISSING DATA IN MYSQL, Exception raised is:"
+
+    @constant
+    def MISSING_INTERFACE_FUNCTIONS(self):
+        return "object missing mandatory functions that specific in the object interface"
+
+
 classifications = ClassificationConst()
 net = NetConst()
+errorMessages = ErrorMessages

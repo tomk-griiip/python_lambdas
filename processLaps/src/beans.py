@@ -9,7 +9,7 @@ from json import JSONEncoder
 from lambda_utils import *
 from datetime import datetime
 import os
-from interfaces import IApiWrapper
+from api_wrapper import IApiWrapper
 from griiip_exeptions import TracksException
 
 """
