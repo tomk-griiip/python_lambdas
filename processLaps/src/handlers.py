@@ -6,26 +6,26 @@ all the class in this file are only for data structure purposes
 """
 from json import JSONEncoder
 # import lambda_utils
+from griiip_const import net
 from lambda_utils import *
 from datetime import datetime
 import os
-from api_wrapper import IApiWrapper
-from griiip_exeptions import TracksException
-
-"""
-
-@LapBean hold ReceivedLap and the lapId that need to be generate
-
-"""
+from interfaces import IDataBase, IDataBaseClient
+from griiip_exeptions import TracksException, RunDataException
 
 
 class LapBean(object):
     """
-    @ReceivedLap class that hold the info
-    that process laps received from api_gateway_to_process_laps sqs queue
+
+    @LapBean hold ReceivedLap and the lapId that need to be generate
+
     """
 
     class ReceivedLap(object):
+        """
+        @ReceivedLap class that hold the info
+        that process laps received from api_gateway_to_process_laps sqs queue
+        """
 
         def __init__(self, *, record: dict):
             self.trackId = int(record['trackId'])
@@ -60,23 +60,21 @@ class LapBean(object):
         return f"{car_id}{day}{month}{year}{hour}{minutes}{second}{lap_number}"
 
 
-"""
-@:type RunDataRow is bean object that hold 
-row from `driverlapsrundata` Table fro mysql RDS 
-"""
-
-
 class RunDataRow(object):
+    """
+    @:type RunDataRow is bean object that hold
+    row from `driverlapsrundata` Table fro mysql RDS
+
+    """
+
     def __init__(self, **entries):
         self.__dict__.update(entries)
 
 
-"""
-class that need to be implanted in order to create const property in an object
-"""
-
-
 class Constant(object):
+    """
+    class that need to be implanted in order to create const property in an object
+    """
     _const_list: [] = []  # list that hold all the constance of the class
 
     def set_const_list(self, _lst: []):
@@ -92,16 +90,14 @@ class Constant(object):
             self.__dict__[key] = value
 
 
-"""
-@:type Lap represent full lap object 
-"""
-
-
 class Lap(Constant):
     """
-    constant property's the value for them is from template.yaml file
-    do not change change them from code !!!!
+    @:type Lap represent full lap object
     """
+
+    # constant property's the value for them is from template.yaml file
+    # do not change change them from code !!!!
+
     MAX_ACC_PERCENT: float = environ('MAX_ACC_PERCENT', float)
     FULL_LAP_FLOOR: float = environ('FULL_LAP_FLOOR', float)
     FULL_LAP_CELL = environ('FULL_LAP_CELL')
@@ -144,12 +140,14 @@ class Lap(Constant):
     def set_classification(self, classification: str):
         self._classification = self._columns_to_update['classification'] = classification
 
-    """
-    @:param an api wrapper class (class that communicate with the RDS)
-    @:return set the gps length of the track  
-    """
+    def set_track_length(self, ApiWrapper_cls: IDataBaseClient):
+        """
 
-    def set_track_length(self, ApiWrapper_cls: IApiWrapper):
+        Parameters
+        ----------
+        ApiWrapper_cls class that communicate with the RDS
+
+        """
         end_point: str = f"/trackmap/{self.TrackId}"
         length: float = None
         try:

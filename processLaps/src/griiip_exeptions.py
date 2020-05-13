@@ -1,3 +1,6 @@
+import traceback
+
+
 class RunDataException(Exception):
     def __init__(self, lap_name):
         Exception.__init__(self, "Couldn't find lap: {} in RUN-DATA table".format(lap_name))
@@ -41,3 +44,13 @@ class KpiLambdaError(Exception):
 class InterfaceImplementationException(TypeError):
     def __init__(self, interface):
         super().__init__(f"class must implement {interface} Interface")
+
+
+class CantConnectToDbException(Exception):
+    def __init__(self):
+        super().__init__(f"cannot connect to the Db {traceback.print_exc()}")
+
+
+class SqlCursorNoneException(Exception):
+    def __init__(self, ops: str):
+        super().__init__(f"sql {ops} operation filed {traceback.print_exc()}")

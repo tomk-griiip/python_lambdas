@@ -1,12 +1,12 @@
 from api_wrapper import ApiWrapper
-from beans import *
+from handlers import *
 from griiip_exeptions import *
 from config import config as conf
 from classifiers import ruleBaseClassifier
 from classifiers import IClassifier
 import traceback
 
-from interfaces import IDb
+from interfaces import IDataBaseClient
 from lambda_utils import *
 from griiip_const import net, classifications, errorMessages
 from db_wrapper import db_api as db
@@ -79,7 +79,7 @@ def handle_lap(record: dict):
     lapId = record["lapId"]
     # config the request for API to get the run data
     limit, page = int(os.environ['runDataRetrieveLimit']), int(os.environ['runDataPaging'])
-    runData: [] = db.getRunData(lapId=lapId, limit=limit, page=page)
+    runData: [] = db.getRunData(query=net.RUNDATA_URL, lapName=lapId, limit=limit, page=page)
 
     # create object that represent full lap
     for key, value in conf.fieldsFromSqsMessage.items():

@@ -1,4 +1,4 @@
-from beans import LapBean
+from handlers import LapBean
 from lambda_utils import *
 from griiip_exeptions import *
 from api_wrapper import ApiWrapper
