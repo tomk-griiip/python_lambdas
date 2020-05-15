@@ -1,13 +1,16 @@
 import traceback
-from abc import ABC
+import boto3
+import pymysql
+import os
+import requests
 
-from api_wrapper import *
+from boto3.dynamodb.conditions import Key
+from abc import ABC
 from griiip_const import net, errorMessages
 from griiip_exeptions import RunDataException, ApiException, CantConnectToDbException, SqlCursorNoneException
 from interfaces import IDataBaseClient, IDataBase
 from lambda_utils import environ
-import pymysql
-from decorators import ifNotConnectDo
+from decorators import ifNotConnectDo, addTable
 
 
 class DbPyMySQL(IDataBaseClient):
@@ -198,92 +201,76 @@ class DbPyMySQL(IDataBaseClient):
             return is_post
 
 
-class DbWithApiGetAway(IDataBase):
+class DbApiWrapper(IDataBaseClient):
+    """
+    ApiWrapper is client for data base that use api get away
+    for crud ops
+    """
 
-    def putLap(self, insert, **kwargs):
+    @classmethod
+    def __init__(cls, **kwargs):
+        cls.api_address = kwargs['api_address']
+        cls.api_key = kwargs['api_key']
+
+    @classmethod
+    def get(cls, url, **kwargs):
+        payload = {}
+        if kwargs is not None:
+            payload = kwargs
+        return requests.get(cls.api_address + url, params=payload, headers={'x-api-key': str(cls.api_key)})
+
+    @classmethod
+    def put(cls, url, **kwargs):
+        body = kwargs
+        return requests.put(cls.api_address + url, json=body, headers={'x-api-key': cls.api_key})
+
+    @classmethod
+    def post(cls, url, **kwargs):
+        body = kwargs
+        return requests.post(cls.api_address + url, json=body, headers={'x-api-key': cls.api_key})
+
+    @classmethod
+    def delete(cls, url, **kwargs):
+        body = kwargs
+        return requests.delete(cls.api_address + url, json=body, headers={'x-api-key': cls.api_key})
+
+    @classmethod
+    def commit(cls, url, **kwargs):
         pass
 
-    def commit(self, **kwargs):
+
+class DynamoDb(IDataBaseClient):
+    tables: {} = {}
+
+    def __init__(self):
+        self.dynamoDb = boto3.resource('dynamodb')
+
+    def _addTable(self, tableName:str):
+        if tableName in self.tables.keys():
+            return
+        self.tables[tableName] = self.dynamoDb.Table(tableName)
+
+    @addTable(tables)
+    def get(self, sql_cmd, **kwargs):
         pass
 
-    def __init__(self, *, dbClient: IDataBaseClient):
-        if not isinstance(dbClient, IDataBaseClient):
-            raise InterfaceImplementationException("IApiWrapper")
-        self.dbClient = dbClient
+    @addTable(tables)
+    def post(self, sql_cmd, **kwargs):
+        pass
 
-    def getRunData(self, query, **kwargs) -> []:
-        """
-        function that get all the runData of the lap By lapId
-        from 'driverlapsrundata' Table in RDS
-        Parameters
-        ----------
-        query
+    @addTable(tables)
+    def put(self, sql_cmd, **kwargs):
+        pass
 
-        Returns
-        -------
-        array of type RunDataRow each object in the array is one record
-        of the lapRunData
-        """
-        # call API to get runData
-        runData: dict = self.dbClient.get(query, **kwargs).json()['data']
-
-        if len(runData) == 0:
-            raise RunDataException
-
-        # some times the first rows is mistaken distance data
-        # and need to remove them from the run data ro
-        def removed_first_bad_distance_rows() -> int:
-            glitches, total_rows, g = 0, len(runData), 0
-            for row_id in range(total_rows - 1):
-                # In this case, the row 'distance' value is bigger then the next row 'distance' value.
-                if runData[row_id]['distance'] > runData[row_id + 1]['distance']:
-                    glitches += 1
-                else:
-                    break
-            return glitches
-
-        # the number of glitches in thr beginning of the lap
-        num_dist_glit: int = removed_first_bad_distance_rows()
-        if num_dist_glit > 0:
-            print(f"FOUND {num_dist_glit} BAD ROWS FOR LAP {kwargs['lapName']}"
-                  f"\nLAP FIRST ROWS DISTANCE IS BIGGER THEN THE NEXT ROWS")
-
-        return runData[num_dist_glit:]  # remove the rows with the distance glitches in the
-
-    def updateDriverLap(self, update, **kwargs) -> bool:
-        """
-        Parameters
-        ----------
-        columns_to_update column withe their value to be update
-        lap_name the lap to update
-
-        Returns
-        -------
-        True for SUCCESS and False for FAILURE
-
-        """
-        try:
-            columns_to_update, lapName = kwargs['columns_to_update'], kwargs['lap_name']
-            res = self.dbClient.put(update, json={**columns_to_update, "lapName": lapName})
-
-        except KeyError as ke:
-            print(f'kwargs missing argument \n {ke}')
-            return net.FAILURE
-
-        except ApiException as api_e:
-            print(f"db Api Exception : {api_e}")
-            return net.FAILURE
-
-        except Exception as e:
-            print(f"DB Exception : {e}")
-            return net.FAILURE
-
-        if res.status_code == net.OK:
-            return net.SUCCESS
-        else:
-            return net.FAILURE  # Consider raising exception instead
+    @addTable(tables)
+    def delete(self, sql_cmd, **kwargs):
+        pass
 
 
-api = ApiWrapper(api_address=environ('griiip_api_url'), api_key=environ('griiip_api_key'))
+api: IDataBaseClient = DbApiWrapper(api_address=environ('griiip_api_url'), api_key=environ('griiip_api_key'))
 
-db_api = DbWithApiGetAway(dbClient=api)
+sql: IDataBaseClient = DbPyMySQL(host=environ("my_sql_host"),
+                                 user=environ("my_sql_user"),
+                                 passwd=environ("my_sql_pass"),
+                                 dbname=environ("my_sql_db")
+                                 )

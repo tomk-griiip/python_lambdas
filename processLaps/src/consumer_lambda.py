@@ -1,4 +1,4 @@
-from api_wrapper import ApiWrapper
+from db_wrapper import DbApiWrapper
 from handlers import *
 from griiip_exeptions import *
 from config import config as conf
@@ -9,7 +9,7 @@ import traceback
 from interfaces import IDataBaseClient
 from lambda_utils import *
 from griiip_const import net, classifications, errorMessages
-from db_wrapper import db_api as db
+from db_wrapper import api as db
 
 dynamoDb = boto3.resource('dynamodb')
 laps_from_dynamo_table = os.environ['ddb_lap_table']
@@ -79,17 +79,17 @@ def handle_lap(record: dict):
     lapId = record["lapId"]
     # config the request for API to get the run data
     limit, page = int(os.environ['runDataRetrieveLimit']), int(os.environ['runDataPaging'])
-    runData: [] = db.getRunData(query=net.RUNDATA_URL, lapName=lapId, limit=limit, page=page)
+    runData: [] = RunData.getRunData(db=db, lapName=lapId, limit=limit, page=page)
 
     # create object that represent full lap
     for key, value in conf.fieldsFromSqsMessage.items():
         conf.driverLapFieldDict[key] = record[value]
 
     # create Lap object that represent the current lap that being process
-    lap = Lap(runData=runData, funcToField=conf.driverLapFuncToCalcField, **conf.driverLapFieldDict)
+    lap = Lap(runData=runData, funcToField=conf.driverLapFuncToCalcField, db=db, **conf.driverLapFieldDict)
 
     try:
-        lap.set_track_length(ApiWrapper)  # set the length of the track that the lap is on
+        lap.set_track_length(DbApiWrapper)  # set the length of the track that the lap is on
         lapClass: str = classifyLap(lap=lap, classifier=ruleBaseClassifier)  # classify the lap
         lap.set_classification(classification=lapClass)  # set the class to the lap
 
@@ -112,7 +112,7 @@ def handle_lap(record: dict):
     finally:
         columnToUpdate: {} = lap.getColumnToUpdate()
         if len(columnToUpdate.keys()) > 0:  # if there is no items to update return
-            db.updateDriverLap(columns_to_update=lap.getColumnToUpdate(), lap_name=lap.getLapName())
+            db.updateDriverLap()
 
 
 def classifyLap(lap: Lap, classifier: IClassifier) -> str:
@@ -132,4 +132,4 @@ def classifyLap(lap: Lap, classifier: IClassifier) -> str:
     if not issubclass(classifier, IClassifier):
         raise InterfaceImplementationException('IClassifier')
 
-    return classifier.classify(lap=lap, api=ApiWrapper)
+    return classifier.classify(lap=lap, api=DbApiWrapper)

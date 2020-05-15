@@ -54,6 +54,10 @@ class NetConst(object):
     def RUNDATA_URL():
         return "/rundata/"
 
+    @constant
+    def TRACK_MAP():
+        return "/trackmap/"
+
 
 class ErrorMessages:
     @constant

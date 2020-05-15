@@ -23,3 +23,31 @@ def ifNotConnectDo(func):
         return func(self, *args, **kwargs)
 
     return if_not_connect_do_connect
+
+
+def addTable(_dict: {}):
+    """
+    addTable decorator to add item names to a dict
+    Parameters
+    ----------
+    _dict the list to add item to
+    int the *args the first argument need to be the item to add to the list
+    or if using **kwargs then need to be in the function name={item}
+    Returns
+    -------
+
+    """
+
+    def add_table(func):
+        def add_table_inner(*args, **kwargs):
+            if len(args) > 1:
+                n = args[1]
+                _dict[n] = n
+            elif 'name' in kwargs:
+                n = kwargs['name']
+                _dict[n] = n
+            return func(*args, **kwargs)
+
+        return add_table_inner
+
+    return add_table

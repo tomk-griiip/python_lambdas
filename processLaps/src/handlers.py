@@ -11,7 +11,7 @@ from lambda_utils import *
 from datetime import datetime
 import os
 from interfaces import IDataBase, IDataBaseClient
-from griiip_exeptions import TracksException, RunDataException
+from griiip_exeptions import TracksException, RunDataException, ApiException
 
 
 class LapBean(object):
@@ -71,6 +71,51 @@ class RunDataRow(object):
         self.__dict__.update(entries)
 
 
+class RunData(object):
+    @staticmethod
+    def getRunData(db: IDataBaseClient, **kwargs) -> []:
+        """
+        function that get all the runData of the lap By lapId
+        from 'driverlapsrundata' Table in RDS
+        Parameters
+        ----------
+        db
+        query
+        kwargs
+
+        Returns
+        -------
+        array of type RunDataRow each object in the array is one record
+        of the lapRunData
+        """
+        # call API to get runData
+
+        runData: dict = db.get(query=net.RUNDATA_URL, **kwargs).json()['data']
+
+        if len(runData) == 0:
+            raise RunDataException
+
+        # some times the first rows is mistaken distance data
+        # and need to remove them from the run data ro
+        def removed_first_bad_distance_rows() -> int:
+            glitches, total_rows, g = 0, len(runData), 0
+            for row_id in range(total_rows - 1):
+                # In this case, the row 'distance' value is bigger then the next row 'distance' value.
+                if runData[row_id]['distance'] > runData[row_id + 1]['distance']:
+                    glitches += 1
+                else:
+                    break
+            return glitches
+
+        # the number of glitches in thr beginning of the lap
+        num_dist_glit: int = removed_first_bad_distance_rows()
+        if num_dist_glit > 0:
+            print(f"FOUND {num_dist_glit} BAD ROWS FOR LAP {kwargs['lapName']}"
+                  f"\nLAP FIRST ROWS DISTANCE IS BIGGER THEN THE NEXT ROWS")
+
+        return runData[num_dist_glit:]  # remove the rows with the distance glitches in the
+
+
 class Constant(object):
     """
     class that need to be implanted in order to create const property in an object
@@ -106,10 +151,11 @@ class Lap(Constant):
     _columns_to_update: dict = {}
     _classification: str = None
 
-    def __init__(self, runData: [], funcToField: dict, **entries) -> object:
+    def __init__(self, runData: [], funcToField: dict, db: IDataBaseClient, **entries) -> object:
         self.__dict__.update(entries)  # create the object fields according to configuration
         # create array of RunDataRow bean object
         self.__lap_quads: [] = [RunDataRow(**runData[i]) for i in range(len(runData))]
+        self.db = db
 
         # calculate fields value by functions from configuration
         for key, value in funcToField.items():
@@ -140,7 +186,7 @@ class Lap(Constant):
     def set_classification(self, classification: str):
         self._classification = self._columns_to_update['classification'] = classification
 
-    def set_track_length(self, ApiWrapper_cls: IDataBaseClient):
+    def set_track_length(self):
         """
 
         Parameters
@@ -148,10 +194,10 @@ class Lap(Constant):
         ApiWrapper_cls class that communicate with the RDS
 
         """
-        end_point: str = f"/trackmap/{self.TrackId}"
+
         length: float = None
         try:
-            length: float = ApiWrapper_cls.get(end_point).json()['gpsLength']
+            length: float = self.db.get(f"{net.TRACK_MAP}{self.TrackId}").json()['gpsLength']
 
         except Exception:
             pass
@@ -176,6 +222,33 @@ class Lap(Constant):
 
         finally:
             return lapName
+
+    def updateDriverLap(self) -> bool:
+        """
+        update driverLaps table
+        Returns
+        -------
+        True for SUCCESS and False for FAILURE
+        """
+        try:
+            res = self.db.put(uupdate=net.UPDATE_DRIVER_LAP_URL, **self._columns_to_update)
+
+        except KeyError as ke:
+            print(f'kwargs missing argument \n {ke}')
+            return net.FAILURE
+
+        except ApiException as api_e:
+            print(f"db Api Exception : {api_e}")
+            return net.FAILURE
+
+        except Exception as e:
+            print(f"DB Exception : {e}")
+            return net.FAILURE
+
+        if res.status_code == net.OK:
+            return net.SUCCESS
+        else:
+            return net.FAILURE  # Consider raising exception instead
 
 
 class RunDataRowEncoder(JSONEncoder):

@@ -1,12 +1,12 @@
 from handlers import LapBean
 from lambda_utils import *
 from griiip_exeptions import *
-from api_wrapper import ApiWrapper
+from db_wrapper import DbApiWrapper
 import boto3
 from boto3.dynamodb.conditions import Key
 import pymysql
 import os
-
+from db_wrapper import sql as db
 
 # init dynamoDb table
 dynamoDb = boto3.resource('dynamodb')
@@ -190,7 +190,7 @@ carId UserId and lapStartTime
 def add_new_lap_mysql_api(lap: LapBean) -> bool:
     lap_time = format_seconds_to_hhmmss(0.0)
     try:
-        ApiWrapper.put("/driverlaps/", json={'lapName': lap.lapId,
+        DbApiWrapper.put("/driverlaps/", json={'lapName': lap.lapId,
                                              'lapStartDate': lap.lap.lapStartTime,
                                              'lapTime': lap_time,
                                              'UserId': lap.lap.carId, 'TrackId': lap.lap.userId,
