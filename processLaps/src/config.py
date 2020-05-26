@@ -133,7 +133,7 @@ class Config:
     value = > list of [{lambda: {lambda name}, params:{dict of params to pass to the lambda}}]
     """
     lambdasToCalculateKpi: dict = {
-        'G1': [{'lambda': 'test_tom', 'params': {}}]
+        'G1': [{'lambda': 'arn:aws:lambda:eu-central-1:645717288378:function:test_tom', 'params': {}}]
     }
     # lap classification that need kpi calculation
     # Todo remove NON_LEGIT its just for develop peruse

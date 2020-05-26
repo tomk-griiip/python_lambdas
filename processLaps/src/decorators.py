@@ -43,8 +43,8 @@ def addTable(_dict: {}):
             if len(args) > 1:
                 n = args[1]
                 _dict[n] = n
-            elif 'name' in kwargs:
-                n = kwargs['name']
+            elif 'tableName' in kwargs:
+                n = kwargs['tableName']
                 _dict[n] = n
             return func(*args, **kwargs)
 

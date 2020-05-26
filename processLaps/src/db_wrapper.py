@@ -242,28 +242,71 @@ class DbApiWrapper(IDataBaseClient):
 class DynamoDb(IDataBaseClient):
     tables: {} = {}
 
-    def __init__(self):
+    def __init__(self, tables=[]):
         self.dynamoDb = boto3.resource('dynamodb')
+        if len(tables) <= 0:
+            return
+        for tableName in tables:
+            self._addTable(tableName)
 
-    def _addTable(self, tableName:str):
+    def _addTable(self, tableName: str):
         if tableName in self.tables.keys():
             return
         self.tables[tableName] = self.dynamoDb.Table(tableName)
 
+    def _getTable(self, key: str):
+        return self.dynamoDb.Table(self.tables[key])
+
     @addTable(tables)
-    def get(self, sql_cmd, **kwargs):
-        pass
+    def get(self, *, tableName, key, **kwargs) -> {}:
+        """
+        qouery items fom dynamo db
+        :param tableName: the table to query from
+        :param key: the primary key name of the table
+        :param kwargs: aether argument to add to thew query
+        :return: items that was found
+        """
+        _key = Key(key)
+        if "eq" in kwargs:
+            _keyConditionExpression = _key.eq(kwargs['eq'])
+            del kwargs['eq']  # remove used params
+        else:
+            _keyConditionExpression = key
+
+        table = self._getTable(tableName)
+        kwargs['KeyConditionExpression'] = _keyConditionExpression  # add the condition to kwargs to send to dynamo
+
+        ddb_response = table.query(**kwargs)
+        return ddb_response["Items"] if "Items" in ddb_response else None
 
     @addTable(tables)
     def post(self, sql_cmd, **kwargs):
+        # Todo need to be implement (update item method)
         pass
 
     @addTable(tables)
-    def put(self, sql_cmd, **kwargs):
-        pass
+    def put(self, *, tableName: str, items: [], **kwargs):
+        """
+        insert items to specific table
+        :param tableName: table name to insert to
+        :param items: json array of items to insert
+        :param kwargs: additional params (Not in use right now)
+        :return: raise exception or return true
+        """
+        table = self._getTable(tableName)
+        try:
+            with table.batch_writer() as batch:
+                for item in items:
+                    batch.put_item(Item=item)
+
+        except Exception as e:
+            raise e
+
+        return True
 
     @addTable(tables)
     def delete(self, sql_cmd, **kwargs):
+        # Todo need to be implement (delete item method)
         pass
 
 
@@ -274,3 +317,4 @@ sql: IDataBaseClient = DbPyMySQL(host=environ("my_sql_host"),
                                  passwd=environ("my_sql_pass"),
                                  dbname=environ("my_sql_db")
                                  )
+ddb: IDataBaseClient = DynamoDb()

@@ -1,3 +1,5 @@
+import json
+
 from handlers import LapBean
 from lambda_utils import *
 from griiip_exeptions import *
@@ -6,7 +8,8 @@ import boto3
 from boto3.dynamodb.conditions import Key
 import pymysql
 import os
-from db_wrapper import sql as db
+from db_wrapper import sql as db, ddb as ddb
+import traceback
 
 # init dynamoDb table
 dynamoDb = boto3.resource('dynamodb')
@@ -19,21 +22,7 @@ mySqlConn = pymysql.connect(host=os.environ['my_sql_host'],
                             db=os.environ['my_sql_db'])
 cursor = mySqlConn.cursor()
 PROCESS_NAME = "laps_producer"
-
-"""
-@:parameter prefix_lap the lap id without the lap number that is an know yet
-@ return the last lap number + 1 (the current lap) as string 
-"""
-
-
-def query_last_lap_number(prefix_lap: str) -> str:
-    kce = Key(os.environ['cache_ddb_table_key']).eq(prefix_lap)  # & Key('lap_number').between(0, 999)
-    ddb_res = cache_table.query(
-        KeyConditionExpression=kce, ScanIndexForward=False, Limit=1
-
-    )
-    items = ddb_res['Items']
-    return 0 if len(items) == 0 else max([int(v['lap_number']) for i, v in enumerate(items)]) + 1
+DDB_CACHE_TABLE = os.environ['cache_ddb_table_name']
 
 
 def lambda_handler(event, context):
@@ -55,13 +44,12 @@ def lambda_handler(event, context):
     }
 
 
-"""
-@:param record the new lap to process (without lap number )
-process the lap and insert it with the lap number to cache_table
-"""
-
-
 def handle_record(record: dict):
+    """
+    process the lap and insert it with the lap number to cache_table
+    :param record: record the new lap to process (without lap number )
+
+    """
     lap = LapBean(record=record)
     try:  # insert lap id to cache table in order to follow the lap number
         # even if the process failed in the way (not inserted to sql / sqs )
@@ -89,19 +77,30 @@ def handle_record(record: dict):
         print(f"{PROCESS_NAME} error : {dbs}")
 
     except Exception as e:
+        print(traceback.format_stack())
         print(f"{PROCESS_NAME} error: {e}")
     finally:
         return lap.lapId
 
 
-"""
-insert new lap to mySql db
-@:param lap to insert
-@:return True for success false for failed 
-"""
+def query_last_lap_number(prefix_lap: str) -> str:
+    """
+
+    :param prefix_lap: the lap id without the lap number that is an know yet
+    :return: the last lap number + 1 (the current lap) as string
+    """
+    items = ddb.get(tableName=DDB_CACHE_TABLE,
+                    key=os.environ['cache_ddb_table_key'],
+                    eq=prefix_lap, ScanIndexForward=False, Limit=1)
+    return 0 if len(items) == 0 else max([int(v['lap_number']) for i, v in enumerate(items)]) + 1
 
 
 def insert_lap_to_mysql_no_commit(lap: LapBean) -> bool:
+    """
+    insert new lap to mySql db
+    :param lap: lap to insert
+    :return: True for success false for failed
+    """
     lap_time = format_seconds_to_hhmmss(0.0)
     insert: str = f"insert into `driverlaps`(`lapName`, `TrackId`, `CarId`, `UserId`, `lapStartDate`, " \
                   f"`lapTime`) " \
@@ -117,39 +116,39 @@ def insert_lap_to_mysql_no_commit(lap: LapBean) -> bool:
         return False
 
 
-"""
-insert new lap to cache table in dynamoDb for saving the persistent
-of the process laps 
-@:param lap to cache
-@:raise DynamoDbBadStatusCode 
-"""
-
-
 def insert_lap_to_dynamo_db_cache_table(lap: LapBean) -> bool:
+    """
+    insert new lap to cache table in dynamoDb for saving the persistent of the process laps
+    :param lap: lap to cache
+    @:raise DynamoDbBadStatusCode
+    :return: true for success false for failre
+    """
     lap_prefix: str = lap.lapId[:-3]
     lap_number: str = int_to_tree_digit_string(query_last_lap_number(lap_prefix))
     lap.lapId = f"{lap_prefix}{lap_number}"
-    res_status_code = cache_table.put_item(
-        Item={
-            'prefix_lap_id': lap_prefix,
-            'lap_number': lap_number,
-            'lap_id': lap.lapId
-        }
-    )['ResponseMetadata']['HTTPStatusCode']
-    if res_status_code is not 200:
-        raise DynamoDbBadStatusCode(statusCode=res_status_code)
+    try:
+        ddb.put(tableName=DDB_CACHE_TABLE, items=[
+            {
+                'prefix_lap_id': lap_prefix,
+                'lap_number': lap_number,
+                'lap_id': lap.lapId
+            }
+        ])
+
+    except Exception as e:
+        print(f"exeption in insert lap to dynamo db lap number {lap.lapId}\n exception: {e}")
+        raise DynamoDbBadStatusCode(statusCode=500)
         return False, lap
+
     return True, lap
 
 
-"""
-@:function put_lap_to_sqs put the lap id that the consumer lambda 
-need to process in sqs
-@:param lap id to pass to the next lambda
-"""
-
-
 def put_previous_lap_to_sqs(lap: LapBean) -> bool:
+    """
+    put_lap_to_sqs put the lap id that the consumer lambda need to process in sqs
+    :param lap: lap id to pass to the next lambda
+    :return: true for success false for failre
+    """
     try:
         lap_prefix: str = lap.lapId[:-3]
         lap_number: int = int(lap.lapId[-3:]) - 1
@@ -165,13 +164,12 @@ def put_previous_lap_to_sqs(lap: LapBean) -> bool:
     print(f"sqs response {res}")
 
 
-"""
-@:param mysql connaction
-commit the last changes on the db 
-"""
-
-
 def mysql_commit(conn) -> bool:
+    """
+    commit the last changes on the db
+    :param conn: mysql connaction
+    :return: true for success false for failre
+    """
     try:
         conn.commit()
         return True
@@ -180,21 +178,19 @@ def mysql_commit(conn) -> bool:
         return False
 
 
-"""
-use the API get awy to insert first time lap to mysql 
-@:param LapBean with full lapId lapTime = 0.0
-carId UserId and lapStartTime
-"""
-
-
 def add_new_lap_mysql_api(lap: LapBean) -> bool:
+    """
+    use the API get awy to insert first time lap to mysql
+    :param lap: LapBean with full lapId lapTime = 0.0 carId UserId and lapStartTime
+    :return: true for success false for failre
+    """
     lap_time = format_seconds_to_hhmmss(0.0)
     try:
         DbApiWrapper.put("/driverlaps/", json={'lapName': lap.lapId,
-                                             'lapStartDate': lap.lap.lapStartTime,
-                                             'lapTime': lap_time,
-                                             'UserId': lap.lap.carId, 'TrackId': lap.lap.userId,
-                                             'CarId': lap.lap.carId})
+                                               'lapStartDate': lap.lap.lapStartTime,
+                                               'lapTime': lap_time,
+                                               'UserId': lap.lap.carId, 'TrackId': lap.lap.userId,
+                                               'CarId': lap.lap.carId})
         return True
     except Exception as e:
         print(f"error at add_new_lap_mysql_api :  {e}")

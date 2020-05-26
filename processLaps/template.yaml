@@ -5,6 +5,9 @@ Description: >
 
   Sample SAM Template for AWS
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Parameters:
+  Environment:
+    Type: String
 Globals:
   Function:
     Timeout: 300
@@ -29,6 +32,18 @@ Resources:
       CodeUri: src/
       Handler: consumer_lambda.lambda_handler
       Runtime: python3.7
+      AutoPublishAlias: consumer_live
+      # Grants this function permission to call lambda:InvokeFunction
+      Policies:
+        - Version: "1"
+          Statement:
+            - Effect: "Allow"
+              Action:
+                - "lambda:InvokeFunction"
+              Resource: '*'
+      DeploymentPreference:
+# Specifies the deployment configuration
+          Type: Linear10PercentEvery1Minute
       Environment:
         Variables:
           MAX_ACC_PERCENT: 0.80
@@ -54,6 +69,12 @@ Resources:
     Properties:
       CodeUri: src/
       Handler: producer_lambda.lambda_handler
+      AutoPublishAlias: producer_live
+      Policies:
+        - Version: "1"
+      DeploymentPreference:
+# Specifies the deployment configuration
+          Type: Linear10PercentEvery1Minute
       Environment:
         Variables:
           responseQueue: https://sqs.eu-central-1.amazonaws.com/645717288378/processLaps_producer-to-consumer

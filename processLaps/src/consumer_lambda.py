@@ -89,7 +89,7 @@ def handle_lap(record: dict):
     lap = Lap(runData=runData, funcToField=conf.driverLapFuncToCalcField, db=db, **conf.driverLapFieldDict)
 
     try:
-        lap.set_track_length(DbApiWrapper)  # set the length of the track that the lap is on
+        lap.set_track_length()  # DbApiWrapper# set the length of the track that the lap is on
         lapClass: str = classifyLap(lap=lap, classifier=ruleBaseClassifier)  # classify the lap
         lap.set_classification(classification=lapClass)  # set the class to the lap
 
@@ -112,7 +112,7 @@ def handle_lap(record: dict):
     finally:
         columnToUpdate: {} = lap.getColumnToUpdate()
         if len(columnToUpdate.keys()) > 0:  # if there is no items to update return
-            db.updateDriverLap()
+            lap.updateDriverLap()
 
 
 def classifyLap(lap: Lap, classifier: IClassifier) -> str:
@@ -129,7 +129,7 @@ def classifyLap(lap: Lap, classifier: IClassifier) -> str:
     classification
     """
 
-    if not issubclass(classifier, IClassifier):
+    if not isinstance(classifier, IClassifier):
         raise InterfaceImplementationException('IClassifier')
 
     return classifier.classify(lap=lap, api=DbApiWrapper)

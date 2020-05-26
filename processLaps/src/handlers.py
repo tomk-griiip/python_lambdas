@@ -90,7 +90,7 @@ class RunData(object):
         """
         # call API to get runData
 
-        runData: dict = db.get(query=net.RUNDATA_URL, **kwargs).json()['data']
+        runData: dict = db.get(net.RUNDATA_URL, **kwargs).json()['data']
 
         if len(runData) == 0:
             raise RunDataException
@@ -231,7 +231,7 @@ class Lap(Constant):
         True for SUCCESS and False for FAILURE
         """
         try:
-            res = self.db.put(uupdate=net.UPDATE_DRIVER_LAP_URL, **self._columns_to_update)
+            res = self.db.put(net.UPDATE_DRIVER_LAP_URL, **self._columns_to_update)
 
         except KeyError as ke:
             print(f'kwargs missing argument \n {ke}')
