@@ -14,6 +14,8 @@ from decorators import ifNotConnectDo, addTable
 
 
 class DbPyMySQL(IDataBaseClient):
+    MAX_RETRIES = 3
+    is_conned = False
 
     def __init__(self, host, user, passwd, dbname):
         self.coon = None

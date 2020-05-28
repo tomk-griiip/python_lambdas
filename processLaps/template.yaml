@@ -87,5 +87,18 @@ Resources:
             BatchSize: 10
             Enabled: true
 
+  sessionEnd:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: .
+      Runtime: python3.7
+      Handler: src/session_end_lambda.lambda_handler
+      AutoPublishAlias: producer_live
+      Policies:
+        - Version: "1"
+      DeploymentPreference:
+# Specifies the deployment configuration
+          Type: Linear10PercentEvery1Minute
+
 
 
