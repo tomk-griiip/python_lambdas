@@ -1,60 +1,45 @@
 import traceback
 import boto3
 import pymysql
-import os
+# import os
 import requests
-
+# import pymysqlpool
 from boto3.dynamodb.conditions import Key
-from abc import ABC
-from griiip_const import net, errorMessages
-from griiip_exeptions import RunDataException, ApiException, CantConnectToDbException, SqlCursorNoneException
-from interfaces import IDataBaseClient, IDataBase
-from lambda_utils import environ
-from decorators import ifNotConnectDo, addTable
+from .griiip_exeptions import SqlCursorNoneException
+from .interfaces import IDataBaseClient
+from .decorators import ifNotConnectDo, addTable
 
 
 class DbPyMySQL(IDataBaseClient):
     MAX_RETRIES = 3
     is_conned = False
 
-    def __init__(self, host, user, passwd, dbname):
-        self.coon = None
-        self.host = host
-        self.user = user
-        self.passwd = passwd
-        self.dbname = dbname
-        self.is_conned = self._connect()
+    def __init__(self, mySqlPool):  # self, host, user, passwd, dbname):
+        self.conn = mySqlPool.get_connection()  # None
+        # self.is_conned = self._connect()
 
-    def __del__(self):
-        self.disconnect_to_mysql()
-        print(f"disconnect_to_mysql() success, host={self.host}, user={self.user}, db={self.dbname}")
+    def _is_connect(self):
+        if not self.conn:
+            return False
+        return True
 
     def _connect(self):
         try:
-            if self.is_conned:
+            if self.conn:
                 return True
-            self.coon = pymysql.connect(host=self.host, user=self.user, password=self.passwd, db=self.dbname)
+            self.conn = mySqlPool.get_connection()  # pymysql.connect(host=self.host, user=self.user,
+            # password=self.passwd, db=self.dbname)
             return True
 
         except Exception as e:
-            print(f"Connect to MySQL Server Failed, host={self.host}, user={self.user}, db={self.dbname} \n {e}")
+            print(f"Connect to MySQL Server Failed\n {e}")
             return False
 
-    def disconnect_to_mysql(self):
-        try:
-            if self.is_conned and self.coon is not None:
-                self.coon.close()
-                self.coon = None
-                self.is_conned = False
-
-        except Exception as e:
-            print(f"Disconnect to MySQL Server Failed, errmsg = {e}")
-
-    def __query(self, sql, use_dict_cursor=False):
+    def __query(self, sql, **kwargs):
         cursor = None
         for i in range(self.MAX_RETRIES):
             try:
-                if use_dict_cursor:
+                if 'use_dict_cursor' in kwargs:
                     cursor = self.conn.cursor(pymysql.cursors.DictCursor)
                 else:
                     cursor = self.conn.cursor()
@@ -69,7 +54,7 @@ class DbPyMySQL(IDataBaseClient):
 
     @ifNotConnectDo
     def commit(self):
-        self.coon.commit()
+        self.conn.commit()
 
     @ifNotConnectDo
     def get(self, sql_cmd, **kwargs):
@@ -85,7 +70,7 @@ class DbPyMySQL(IDataBaseClient):
 
         """
         try:
-            cursor = self.__query(sql_cmd)
+            cursor = self.__query(sql_cmd, **kwargs)
             if cursor is None:
                 raise SqlCursorNoneException(ops='query')
 
@@ -115,25 +100,23 @@ class DbPyMySQL(IDataBaseClient):
         -------
 
         """
-        is_put: bool = False
         try:
             cursor = self.__query(sql_cmd)
             if cursor is None:
                 raise SqlCursorNoneException(ops='insert')
 
             if 'commit' in kwargs:
-                self.coon.commit()
+                self.conn.commit()
 
-            is_put = True
+            return True
 
         except SqlCursorNoneException as cursorNone:
             print(cursorNone)
+            raise cursorNone
 
         except Exception as e:
             print(f"query filed err {e} \n {traceback.format_exc()}")
-
-        finally:
-            return is_put
+            raise e
 
     @ifNotConnectDo
     def post(self, sql_cmd, **kwargs):
@@ -156,15 +139,17 @@ class DbPyMySQL(IDataBaseClient):
                 raise SqlCursorNoneException(ops='update')
 
             if 'commit' in kwargs:
-                self.coon.commit()
+                self.conn.commit()
 
             is_post = True
 
         except SqlCursorNoneException as cursorNone:
             print(cursorNone)
+            raise cursorNone
 
         except Exception as e:
             print(f"query filed err {e} \n {traceback.format_exc()}")
+            raise e
 
         finally:
             return is_post
@@ -189,18 +174,17 @@ class DbPyMySQL(IDataBaseClient):
                 raise SqlCursorNoneException(ops='delete')
 
             if 'commit' in kwargs:
-                self.coon.commit()
+                self.conn.commit()
 
-            is_post = True
+            return True
 
         except SqlCursorNoneException as cursorNone:
             print(cursorNone)
+            raise cursorNone
 
         except Exception as e:
             print(f"query filed err {e} \n {traceback.format_exc()}")
-
-        finally:
-            return is_post
+            raise e
 
 
 class DbApiWrapper(IDataBaseClient):
@@ -223,12 +207,16 @@ class DbApiWrapper(IDataBaseClient):
 
     @classmethod
     def put(cls, url, **kwargs):
-        body = kwargs
+        body = {}
+        if 'json' in kwargs:
+            body = kwargs['json']
         return requests.put(cls.api_address + url, json=body, headers={'x-api-key': cls.api_key})
 
     @classmethod
     def post(cls, url, **kwargs):
-        body = kwargs
+        body = {}
+        if 'json' in kwargs:
+            body = kwargs['json']
         return requests.post(cls.api_address + url, json=body, headers={'x-api-key': cls.api_key})
 
     @classmethod
@@ -300,23 +288,29 @@ class DynamoDb(IDataBaseClient):
             with table.batch_writer() as batch:
                 for item in items:
                     batch.put_item(Item=item)
-
+            return batch
         except Exception as e:
             raise e
 
         return True
 
     @addTable(tables)
-    def delete(self, sql_cmd, **kwargs):
+    def delete(self, *, tableName: str, key: str, **kwargs):
+        table = self._getTable(tableName)
+        try:
+            table.delete_item(
+                Key={
+                    "lap_id": key
+                }
+            )
+        except Exception as e:
+            raise e
         # Todo need to be implement (delete item method)
         pass
 
 
+"""
 api: IDataBaseClient = DbApiWrapper(api_address=environ('griiip_api_url'), api_key=environ('griiip_api_key'))
-
-sql: IDataBaseClient = DbPyMySQL(host=environ("my_sql_host"),
-                                 user=environ("my_sql_user"),
-                                 passwd=environ("my_sql_pass"),
-                                 dbname=environ("my_sql_db")
-                                 )
+sql: IDataBaseClient = DbPyMySQL()
 ddb: IDataBaseClient = DynamoDb()
+"""

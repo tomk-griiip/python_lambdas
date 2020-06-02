@@ -1,4 +1,5 @@
-from lambda_utils import *
+from src.lambda_utils import *
+import src.griiip_const as const
 import os
 
 # -------------- static method's to help building the beans objects ---------------#

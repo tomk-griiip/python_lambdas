@@ -1,4 +1,5 @@
-from griiip_exeptions import CantConnectToDbException
+from .griiip_exeptions import CantConnectToDbException
+import time
 
 
 def ifNotConnectDo(func):
@@ -17,7 +18,7 @@ def ifNotConnectDo(func):
     """
 
     def if_not_connect_do_connect(self, *args, **kwargs):
-        if not self.is_conned:
+        if not self._is_connect():
             if not self._connect():
                 raise CantConnectToDbException
         return func(self, *args, **kwargs)
@@ -51,3 +52,17 @@ def addTable(_dict: {}):
         return add_table_inner
 
     return add_table
+
+
+def execution_time(func):
+    """
+    decorator to test execution time
+    :param func:
+    :return:
+    """
+    def inner(*args, **kwargs):
+        start_time = time.time()
+        func(*args, **args)
+        print(f"--- {time.time() - start_time} execution time in seconds ---")
+
+    return inner

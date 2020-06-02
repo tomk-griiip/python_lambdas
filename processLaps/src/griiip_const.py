@@ -48,7 +48,7 @@ class NetConst(object):
 
     @constant
     def UPDATE_DRIVER_LAP_URL():
-        return "/driverlaps/"
+            return "/driverlaps/"
 
     @constant
     def RUNDATA_URL():

@@ -1,38 +1,135 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
+
 Description: >
   AWS
 
   Sample SAM Template for AWS
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Parameters:
-  Environment:
+  Region:
     Type: String
+    Default: 'eu-central-1'
+
+  AccountId:
+    Type: String
+    Default: '645717288378'
+
+  RDS_CONN_POOL_SIZE:
+    Type: Number
+    Default: 100
+    MaxValue: 200
+    MinValue: 10
+
+  Env:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - test
+      - stage
+      - prod
+
+Mappings:
+  # production api url "https://2kdzicozch.execute-api.eu-central-1.amazonaws.com/prod/api/v1"
+  # test api url #https://2kdzicozch.execute-api.eu-central-1.amazonaws.com/prod/api/test/
+  griiip_api_full_url:
+    dev:
+      api_url: https://2kdzicozch.execute-api.eu-central-1.amazonaws.com/prod/api/test/
+    test:
+      api_url: https://2kdzicozch.execute-api.eu-central-1.amazonaws.com/prod/api/test/
+    stage:
+      api_url: https://2kdzicozch.execute-api.eu-central-1.amazonaws.com/prod/api/v1/
+    prod:
+      api_url: https://2kdzicozch.execute-api.eu-central-1.amazonaws.com/prod/api/v1/
+
+  mySql:
+    dev:
+      schma: grip_test_new
+      host: griiipdbinstance.cjipdoye2y5k.eu-central-1.rds.amazonaws.com
+      user: lambda
+      pass: griiip1011
+    test:
+      schma: grip_test_new
+      host: griiipdbinstance.cjipdoye2y5k.eu-central-1.rds.amazonaws.com
+      user: lambda
+      pass: griiip1011
+    stage:
+      schma: griiip_dev_staging
+      host: griiipdbinstance.cjipdoye2y5k.eu-central-1.rds.amazonaws.com
+      user: lambda
+      pass: griiip1011
+    prod:
+      schma: griiip_dev_staging
+      host: griiipdbinstance.cjipdoye2y5k.eu-central-1.rds.amazonaws.com
+      user: lambda
+      pass: griiip1011
+
+  Dynamo_Db:
+    dev:
+      cache_ddb_table: processLapsCache_develop
+      ddb_lap_table: dashboard-test
+    test:
+      cache_ddb_table: processLapsCache_develop
+      ddb_lap_table: dashboard-test
+    stage:
+      cache_ddb_table: processLapsCache
+      ddb_lap_table: cars-live-status
+    prod:
+      cache_ddb_table: processLapsCache
+      ddb_lap_table: cars-live-status
+
+  sqs:
+    dev:
+      producer-to-consumer_arn: arn:aws:sqs:eu-central-1:645717288378:processLaps_producer-to-consumer-test
+      producer-to-consumer_url: https://sqs.eu-central-1.amazonaws.com/645717288378/processLaps_producer-to-consumer-test
+      api_gateway_to_process_laps_arn: arn:aws:sqs:eu-central-1:645717288378:api_gateway_to_process_laps-test
+      api_gateway_to_process_laps_url: https://sqs.eu-central-1.amazonaws.com/645717288378/api_gateway_to_process_laps-test
+
+    test:
+      producer-to-consumer_arn: arn:aws:sqs:eu-central-1:645717288378:processLaps_producer-to-consumer-test
+      producer-to-consumer_url: https://sqs.eu-central-1.amazonaws.com/645717288378/processLaps_producer-to-consumer-test
+      api_gateway_to_process_laps_arn: arn:aws:sqs:eu-central-1:645717288378:api_gateway_to_process_laps-test
+      api_gateway_to_process_laps_url: https://sqs.eu-central-1.amazonaws.com/645717288378/api_gateway_to_process_laps-test
+
+    stage:
+      producer-to-consumer_arn: arn:aws:sqs:eu-central-1:645717288378:processLaps_producer-to-consumer
+      producer-to-consumer_url: https://sqs.eu-central-1.amazonaws.com/645717288378/processLaps_producer-to-consumer
+      api_gateway_to_process_laps_arn: arn:aws:sqs:eu-central-1:645717288378:api_gateway_to_process_laps
+      api_gateway_to_process_laps_url: https://sqs.eu-central-1.amazonaws.com/645717288378/api_gateway_to_process_laps
+
+    prod:
+      producer-to-consumer_arn: arn:aws:sqs:eu-central-1:645717288378:processLaps_producer-to-consumer
+      producer-to-consumer_url: https://sqs.eu-central-1.amazonaws.com/645717288378/processLaps_producer-to-consumer
+      api_gateway_to_process_laps_arn: arn:aws:sqs:eu-central-1:645717288378:api_gateway_to_process_laps
+      api_gateway_to_process_laps_url: https://sqs.eu-central-1.amazonaws.com/645717288378/api_gateway_to_process_laps
+
 Globals:
   Function:
     Timeout: 300
     Environment:
       Variables:
         common_mappings: serverless.common.yml:custom # importing common values
-        griiip_api_url: https://2kdzicozch.execute-api.eu-central-1.amazonaws.com/prod/api/v1
+        griiip_api_url: !FindInMap [griiip_api_full_url, !Ref Env, api_url]
+
         griiip_api_key: sBTloeh98b1csyMLG7kuJ3xdYehFjeEJ3gpVIgyr
-        cache_ddb_table_name: processLapsCache_develop
+        cache_ddb_table_name: !FindInMap [Dynamo_Db, !Ref Env, cache_ddb_table]
         cache_ddb_table_key: prefix_lap_id
         accountId: 645717288378
-        my_sql_host: griiipdbinstance.cjipdoye2y5k.eu-central-1.rds.amazonaws.com
-        my_sql_user: lambda
-        my_sql_pass: griiip1011
-        my_sql_db: griiip_test
-        test: ${AWS} # nodejs, python, etc.
+        my_sql_host: !FindInMap [mySql, !Ref Env, host]
+        my_sql_user: !FindInMap [mySql, !Ref Env, user]
+        my_sql_pass: !FindInMap [mySql, !Ref Env, pass]
+        my_sql_db: !FindInMap [mySql, !Ref Env, schma]
+        rds_connection_pull_size: !Ref RDS_CONN_POOL_SIZE
 
 Resources:
   consumer:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: src/
-      Handler: consumer_lambda.lambda_handler
+      CodeUri: .
+      Handler: src.consumer.consumer_lambda.lambda_handler
       Runtime: python3.7
-      AutoPublishAlias: consumer_live
+      AutoPublishAlias: !Ref Env
       # Grants this function permission to call lambda:InvokeFunction
       Policies:
         - Version: "1"
@@ -52,24 +149,23 @@ Resources:
           PART_LAP_FLOOR: 0.10
           runDataRetrieveLimit: 5000
           runDataPaging: 1
-          ddb_lap_table: dashboard-test
+          ddb_lap_table: !FindInMap [Dynamo_Db, !Ref Env, ddb_lap_table]
           ddb_lap_table_key: lap_id
           year_prefix: 20
           kpi_num_of_points: 5
-          listenQueue: https://sqs.eu-central-1.amazonaws.com/645717288378/processLaps_producer-to-consumer
       Events:
         LapStart:
           Type: SQS
           Properties:
-            Queue: arn:aws:sqs:eu-central-1:645717288378:processLaps_producer
+            Queue: !FindInMap [sqs, !Ref Env, producer-to-consumer_arn] # arn:aws:sqs:eu-central-1:645717288378:processLaps_producer-to-consumer
             BatchSize: 10
             Enabled: true
   producer:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: src/
-      Handler: producer_lambda.lambda_handler
-      AutoPublishAlias: producer_live
+      CodeUri: .
+      Handler: src.producer.producer_lambda.lambda_handler
+      AutoPublishAlias: !Ref Env
       Policies:
         - Version: "1"
       DeploymentPreference:
@@ -77,13 +173,13 @@ Resources:
           Type: Linear10PercentEvery1Minute
       Environment:
         Variables:
-          responseQueue: https://sqs.eu-central-1.amazonaws.com/645717288378/processLaps_producer-to-consumer
+          responseQueue: !FindInMap [sqs, !Ref Env, producer-to-consumer_url]
       Runtime: python3.7
       Events:
         LapStart:
           Type: SQS
           Properties:
-            Queue: arn:aws:sqs:eu-central-1:645717288378:api_gateway_to_process_laps
+            Queue:  !FindInMap [sqs, !Ref Env, api_gateway_to_process_laps_arn] # arn:aws:sqs:eu-central-1:645717288378:api_gateway_to_process_laps
             BatchSize: 10
             Enabled: true
 
@@ -92,13 +188,25 @@ Resources:
     Properties:
       CodeUri: .
       Runtime: python3.7
-      Handler: src/session_end_lambda.lambda_handler
-      AutoPublishAlias: producer_live
+      Handler: src.sessionEnd.session_end_lambda.lambda_handler
+      AutoPublishAlias: !Ref Env
+      Environment:
+        Variables:
+          driverLapFiledsToQuery: lapStartDate, TrackId, lapName, CarId, UserId
+          driverLapsTable: driverlaps
+          responseQueue: !FindInMap [sqs, !Ref Env, producer-to-consumer_url]
       Policies:
         - Version: "1"
       DeploymentPreference:
 # Specifies the deployment configuration
           Type: Linear10PercentEvery1Minute
+      Events:
+        sessionEnd:
+          Type: Api
+          Properties:
+            Path: /SessionEnd
+            Method: ANY
+
 
 
 

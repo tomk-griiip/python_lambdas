@@ -54,3 +54,4 @@ class CantConnectToDbException(Exception):
 class SqlCursorNoneException(Exception):
     def __init__(self, ops: str):
         super().__init__(f"sql {ops} operation filed {traceback.print_exc()}")
+

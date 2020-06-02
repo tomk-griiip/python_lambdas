@@ -19,6 +19,7 @@ class AsyncLoopManager(object):
         if self.loop.is_running():
             pass  # Todo handle running event loop
         if self.loop.is_closed():
+            self.loop = asyncio.new_event_loop()
             return self.loop
         return self.loop
 

@@ -6,12 +6,12 @@ all the class in this file are only for data structure purposes
 """
 from json import JSONEncoder
 # import lambda_utils
-from griiip_const import net
-from lambda_utils import *
+from src.griiip_const import net
+from src.lambda_utils import *
 from datetime import datetime
 import os
-from interfaces import IDataBase, IDataBaseClient
-from griiip_exeptions import TracksException, RunDataException, ApiException
+from src.interfaces import IDataBase, IDataBaseClient
+from src.griiip_exeptions import TracksException, RunDataException, ApiException
 
 
 class LapBean(object):
@@ -155,7 +155,7 @@ class Lap(Constant):
         self.__dict__.update(entries)  # create the object fields according to configuration
         # create array of RunDataRow bean object
         self.__lap_quads: [] = [RunDataRow(**runData[i]) for i in range(len(runData))]
-        self.db = db
+        self._db = db
 
         # calculate fields value by functions from configuration
         for key, value in funcToField.items():
@@ -197,7 +197,7 @@ class Lap(Constant):
 
         length: float = None
         try:
-            length: float = self.db.get(f"{net.TRACK_MAP}{self.TrackId}").json()['gpsLength']
+            length: float = self._db.get(f"{net.TRACK_MAP}{self.TrackId}").json()['gpsLength']
 
         except Exception:
             pass
@@ -231,7 +231,7 @@ class Lap(Constant):
         True for SUCCESS and False for FAILURE
         """
         try:
-            res = self.db.put(net.UPDATE_DRIVER_LAP_URL, **self._columns_to_update)
+            res = self._db.put(net.UPDATE_DRIVER_LAP_URL, json={**self._columns_to_update})
 
         except KeyError as ke:
             print(f'kwargs missing argument \n {ke}')

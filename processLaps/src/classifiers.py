@@ -1,6 +1,6 @@
-from griiip_exeptions import *
-from griiip_const import classifications as const
-from interfaces import IClassifier
+from src.griiip_exeptions import *
+from src.griiip_const import classifications as const
+from src.interfaces import IClassifier
 
 
 class RuleBaseClassifier(IClassifier):

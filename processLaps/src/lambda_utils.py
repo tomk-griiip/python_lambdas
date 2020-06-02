@@ -10,12 +10,11 @@ from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 # import beans as beans
 # from beans import Lap, RunDataRowEncoder
-from async_manager import *
+from .async_manager import *
 import os
 import json
 
-import griiip_const as const
-from griiip_exeptions import KpiLambdaError
+from .griiip_exeptions import KpiLambdaError
 
 dynamoDb = boto3.resource('dynamodb')
 lambdaClient = boto3.client('lambda')

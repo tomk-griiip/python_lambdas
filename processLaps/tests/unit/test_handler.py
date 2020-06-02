@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from src import consumer_lambda as consumer
-from src import producer_lambda as producer
+from src.consumer import consumer_lambda as consumer
+from src.producer import producer_lambda as producer
 
 
 @pytest.fixture()
