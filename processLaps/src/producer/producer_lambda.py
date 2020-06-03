@@ -3,7 +3,7 @@ import json
 from ..handlers import LapBean
 from ..lambda_utils import *
 from ..griiip_exeptions import *
-from src.griiip_const import net
+from ..griiip_const import net
 import boto3
 import os
 from ..db_wrapper import DbPyMySQL, DynamoDb
@@ -12,7 +12,7 @@ import traceback
 from ..sql_pool_connection import ConnectionPool
 
 """
-create sql pool c
+create sql pool connection
 """
 rdsConfig = {'host': os.environ["my_sql_host"],
              'user': os.environ["my_sql_user"],
@@ -22,7 +22,6 @@ rdsConfig = {'host': os.environ["my_sql_host"],
              }
 
 mySqlPool = ConnectionPool(size=int(os.environ["rds_connection_pull_size"]), name='pool1', **rdsConfig)
-
 sqs = boto3.client('sqs')
 queueUrl = os.environ['responseQueue']
 PROCESS_NAME = "laps_producer"
@@ -123,7 +122,7 @@ class LambdaLogic:
                       f"VALUES('{lap.lapId}', '{lap.lap.trackId}', '{lap.lap.carId}', " \
                       f"'{lap.lap.userId}', '{lap.lap.lapStartTime}', '{lap_time}')"
         try:
-            self.db.put(sql_cmd=insert)
+            self.db.put(sql_cmd=insert, not_commit=True)
             print("""ADDED LAP: {} INTO DRIVERLAPS TABLE""".format(lap.lapId))
             return True
         except Exception as e:

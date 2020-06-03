@@ -14,7 +14,7 @@ from ..db_wrapper import DbApiWrapper
 
 db = DbApiWrapper(api_address=environ('griiip_api_url'), api_key=environ('griiip_api_key'))
 laps_from_dynamo_table = os.environ['ddb_lap_table']
-t = None
+
 
 def lambda_handler(event, context):
     """

@@ -13,6 +13,17 @@ logger = logging.getLogger(__name__)
 logger.setLevel('WARNING')
 
 
+def singleton(class_):
+    instances = {}
+
+    def getinstance(*args, **kwargs):
+        if class_ not in instances:
+            instances[class_] = class_(*args, **kwargs)
+        return instances[class_]
+
+    return getinstance
+
+
 class Connection(pymysql.connections.Connection):
     """
     Return a connection object with or without connection_pool feature.
@@ -89,6 +100,7 @@ def _create_connection(quick_put, args, kwargs):
     quick_put(conn)
 
 
+@singleton
 class ConnectionPool:
     """
     Return connection_pool object, which has method can get connection from a pool with timeout and retry feature;

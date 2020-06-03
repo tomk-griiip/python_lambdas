@@ -1,3 +1,4 @@
+import os
 import traceback
 import boto3
 import pymysql
@@ -15,8 +16,12 @@ class DbPyMySQL(IDataBaseClient):
     is_conned = False
 
     def __init__(self, mySqlPool):  # self, host, user, passwd, dbname):
-        self.conn = mySqlPool.get_connection()  # None
+        self.getConnection = mySqlPool.get_connection
+        self.conn = self.getConnection()  # None
         # self.is_conned = self._connect()
+
+    def __del__(self):
+        self.conn.close()
 
     def _is_connect(self):
         if not self.conn:
@@ -27,7 +32,7 @@ class DbPyMySQL(IDataBaseClient):
         try:
             if self.conn:
                 return True
-            self.conn = mySqlPool.get_connection()  # pymysql.connect(host=self.host, user=self.user,
+            self.conn = self.getConnection  # pymysql.connect(host=self.host, user=self.user,
             # password=self.passwd, db=self.dbname)
             return True
 
@@ -55,6 +60,7 @@ class DbPyMySQL(IDataBaseClient):
     @ifNotConnectDo
     def commit(self):
         self.conn.commit()
+        self.conn.close()
 
     @ifNotConnectDo
     def get(self, sql_cmd, **kwargs):
@@ -105,8 +111,9 @@ class DbPyMySQL(IDataBaseClient):
             if cursor is None:
                 raise SqlCursorNoneException(ops='insert')
 
-            if 'commit' in kwargs:
+            if 'not_commit' not in kwargs:
                 self.conn.commit()
+                self.conn.close()
 
             return True
 
@@ -138,8 +145,9 @@ class DbPyMySQL(IDataBaseClient):
             if cursor is None:
                 raise SqlCursorNoneException(ops='update')
 
-            if 'commit' in kwargs:
+            if 'not_commit' not in kwargs:
                 self.conn.commit()
+                self.conn.close()
 
             is_post = True
 
@@ -173,8 +181,9 @@ class DbPyMySQL(IDataBaseClient):
             if cursor is None:
                 raise SqlCursorNoneException(ops='delete')
 
-            if 'commit' in kwargs:
+            if 'not_commit' not in kwargs:
                 self.conn.commit()
+                self.conn.close()
 
             return True
 
