@@ -10,6 +10,8 @@ return the lap distance
 
 
 def get_lap_distance(lapQuads: []):
+    if len(lapQuads) <= 0:
+        return 0
     return max(lapQuads, key=lambda item: item.distance).distance
 
 
@@ -19,6 +21,8 @@ return the lap time
 
 
 def get_lap_time(lapQuads: []):
+    if len(lapQuads) <= 0:
+        return 0
     return format_seconds_to_hhmmss(max(lapQuads, key=lambda item: item.lapTime).lapTime)
 
 
@@ -28,6 +32,8 @@ return the lap finish long
 
 
 def get_lap_long(lapQuads: []):
+    if len(lapQuads) <= 0:
+        return 0
     return max(lapQuads, key=lambda item: item.gpsLong).gpsLong
 
 
@@ -37,10 +43,14 @@ return the lap finish lat
 
 
 def get_lap_lat(lapQuads: []):
+    if len(lapQuads) <= 0:
+        return 0
     return max(lapQuads, key=lambda item: item.gpsLat).gpsLat
 
 
 def get_lap_start_date(lapQuads: []):
+    if len(lapQuads) <= 0:
+        return None
     lapId = lapQuads[0].lapName
     return calc_lap_start_date(lap_name=lapId, yearPrefix=os.environ['year_prefix'])
 

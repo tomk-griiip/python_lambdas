@@ -200,13 +200,13 @@ class Lap(Constant):
         length: float = None
         try:
             _http_res = self._db.get(f"{net.TRACK_MAP}{self.TrackId}")
-            length: float = 0.0
 
             if _http_res.status_code != 200:
+                length: float = 0.0
                 print(f"{_http_res.status_code}: {_http_res.text}\n track gps length is 0")
 
             else:
-                length = _http_res.json()['gpsLength']
+                length: float = _http_res.json()['gpsLength']
 
         except Exception:
             pass

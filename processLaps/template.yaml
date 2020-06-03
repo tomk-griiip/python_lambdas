@@ -35,9 +35,9 @@ Mappings:
   # test api url #http://2kdzicozch.execute-api.eu-central-1.amazonaws.com/prod/api/test/
   griiip_api_full_url:
     dev:
-      api_url: https://2kdzicozch.execute-api.eu-central-1.amazonaws.com/prod/api/test
+      api_url: https://2kdzicozch.execute-api.eu-central-1.amazonaws.com/test/api/v1
     test:
-      api_url: https://2kdzicozch.execute-api.eu-central-1.amazonaws.com/prod/api/test
+      api_url: https://2kdzicozch.execute-api.eu-central-1.amazonaws.com/test/api/v1
     stage:
       api_url: https://2kdzicozch.execute-api.eu-central-1.amazonaws.com/prod/api/v1
     prod:
