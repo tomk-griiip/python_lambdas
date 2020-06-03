@@ -186,13 +186,13 @@ def lambda_handler(event, context):
     # iterate over all the records in the message
     db = DbPyMySQL(mySqlPool)
     ddb = DynamoDb()
-    for record in event['Records']:
-        try:
-            __lapId = LambdaLogic(db=db, ddb=ddb).handle_record(record['body'])
-            laps.append(__lapId)
+    try:
+        _record = json.loads(event['body'])
+        __lapId = LambdaLogic(db=db, ddb=ddb).handle_record(record=_record)
+        laps.append(__lapId)
 
-        except Exception as e:
-            print(f"exception laps producer : {e}")
+    except Exception as e:
+        print(f"exception laps producer : {e}")
 
     return {
         "statusCode": 200,

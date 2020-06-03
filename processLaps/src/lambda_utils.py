@@ -19,13 +19,12 @@ from .griiip_exeptions import KpiLambdaError
 dynamoDb = boto3.resource('dynamodb')
 lambdaClient = boto3.client('lambda')
 
-"""
-wrap the os.environ function with try except
-for safer local/global/system variable query 
-"""
-
 
 def environ(key: str, _type=None):
+    """
+    wrap the os.environ function with try except
+    for safer local/global/system variable query
+    """
     try:
         if _type is None:
             return os.environ[key]
@@ -36,17 +35,21 @@ def environ(key: str, _type=None):
         return None
 
 
-"""
-convert the number to 3 digit string that represent number
-1 return '001'
-12 return '012'
-124 return '124'
-0 return '000'
-and so on
-"""
-
-
 def int_to_tree_digit_string(num) -> str:
+    """
+    convert the number to 3 digit string that represent number
+    Parameters
+    ----------
+    num
+
+    Returns number as 3 digit str
+    -------
+    1 return '001'
+    12 return '012'
+    124 return '124'
+    0 return '000'
+    """
+
     if type(num) is not str:
         num = str(num)
     n: int = len(num)
@@ -57,13 +60,17 @@ def int_to_tree_digit_string(num) -> str:
     return num
 
 
-"""
-@:parameter datetime
-@:returns  day, month, year, hour, minutes, second
-"""
-
-
 def get_day_month_year(date: datetime) -> ():
+    """
+
+    Parameters
+    ----------
+    date datetime
+
+    Returns day, month, year, hour, minutes, second
+    -------
+
+    """
     d, m, y, h, mint, sec = date.day, date.month, date.year, date.hour, \
                             date.minute, date.second
 
@@ -76,16 +83,20 @@ def get_day_month_year(date: datetime) -> ():
     return day, month, year, hour, minutes, second
 
 
-"""
-@:parameter n = number (integer)
-@:return the number of digits in n
-n = 12 return 2
-n = 9 return 1
-n = 0 return 1 and so on
-"""
-
-
 def int_length(n) -> int:
+    """
+
+    Parameters
+    ----------
+    n = number (integer)
+
+    Returns the number of digits in n
+    n = 12 return 2
+    n = 9 return 1
+    n = 0 return 1 and so on
+    -------
+
+    """
     if n < 0:
         return int(log10(-n)) + 2
 
@@ -96,6 +107,16 @@ def int_length(n) -> int:
 
 
 def format_seconds_to_hhmmss(seconds):
+    """
+
+    Parameters
+    ----------
+    seconds
+
+    Returns hh:mm:ss
+    -------
+
+    """
     hours = int(seconds // (60 * 60))
     seconds %= (60 * 60)
     minutes = int(seconds // 60)
@@ -114,14 +135,19 @@ def read_from_dynamo(*, params: dict, Table) -> dict:
         raise boto3ClientError
 
 
-"""
-@:param lap name and the year prefix (if year = 2019 -> prefix = 20)
-@:return the lap start date in the right syntax (for mysql) by parsing
-the lap name.
-"""
-
-
 def calc_lap_start_date(lap_name, yearPrefix) -> str:
+    """
+
+    Parameters
+    ----------
+    lap_name
+    yearPrefix (if year = 2019 -> prefix = 20)
+
+    Returns the lap start date in the right syntax (for mysql) by parsing
+    the lap name.
+    -------
+
+    """
     str_end = len(lap_name) - 3
     seconds = lap_name[str_end - 2:str_end]
     str_end = str_end - 2
@@ -140,6 +166,18 @@ def calc_lap_start_date(lap_name, yearPrefix) -> str:
 
 
 def calculate_acc_comb(lat_sum, long_sum, num_of_items):
+    """
+
+    Parameters
+    ----------
+    lat_sum
+    long_sum
+    num_of_items
+
+    Returns acceleration combine
+    -------
+
+    """
     acc_comb = 0
     if num_of_items != 0:
         lat_avg = lat_sum / num_of_items
@@ -150,16 +188,28 @@ def calculate_acc_comb(lat_sum, long_sum, num_of_items):
 
 def calculate_kpi(loop, **args):  # lap, config, loop, accountName="G1"):
     """
-    Parameters:
-    loop async_io.eventLoop
-    lap : the lap
-    config: the config object
-    accountName: the account that process lap run on now
-    (each account have different kpi so different kpi lambda
+
+    Parameters
+    ----------
+    loop  :
+    async_io.eventLoop
+    **args  = {
+            lap : the lap,
+            config: the config object,
+            accountName: the account that process lap run on now
+            (each account have different kpi so different kpi lambda
+        }
+
     Raises KpiLambdaError
+
+
+    Returns
+    -------
+
     """
+
     try:
-        lapId, config,  = args['lapId'], args['config']
+        lapId, config, = args['lapId'], args['config']
         accountName = args['accountName'] if 'accountName' in args else 'G1'
         num_of_points: int = environ('kpi_num_of_points', int)
         tasks: list = []
@@ -191,4 +241,3 @@ def calculate_kpi(loop, **args):  # lap, config, loop, accountName="G1"):
 
     except Exception as e:
         raise KpiLambdaError(acc=accountName, e=e)
-

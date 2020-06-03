@@ -89,8 +89,12 @@ class RunData(object):
         of the lapRunData
         """
         # call API to get runData
+        _http_res = db.get(net.RUNDATA_URL, **kwargs)
+        if _http_res.status_code != 200:
+            print(f"{_http_res.status_code}: {_http_res.text}")
+            return []
 
-        runData: dict = db.get(net.RUNDATA_URL, **kwargs).json()['data']
+        runData: dict = _http_res.json()['data']
 
         if len(runData) == 0:
             raise RunDataException
@@ -188,22 +192,28 @@ class Lap(Constant):
 
     def set_track_length(self):
         """
-
-        Parameters
-        ----------
-        ApiWrapper_cls class that communicate with the RDS
+        set the gps track length from mysql track table
+        Returns
+        -------
 
         """
-
         length: float = None
         try:
-            length: float = self._db.get(f"{net.TRACK_MAP}{self.TrackId}").json()['gpsLength']
+            _http_res = self._db.get(f"{net.TRACK_MAP}{self.TrackId}")
+            length: float = 0.0
+
+            if _http_res.status_code != 200:
+                print(f"{_http_res.status_code}: {_http_res.text}\n track gps length is 0")
+
+            else:
+                length = _http_res.json()['gpsLength']
 
         except Exception:
             pass
 
         if length is None:
             raise TracksException(self.TrackId)
+
         self._trackGpsLength = float(length) / 1000
 
     def getLapQuads(self) -> []:
