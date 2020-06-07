@@ -48,7 +48,7 @@ class NetConst(object):
 
     @constant
     def UPDATE_DRIVER_LAP_URL():
-            return "/driverlaps/"
+        return "/driverlaps/"
 
     @constant
     def RUNDATA_URL():
@@ -57,6 +57,14 @@ class NetConst(object):
     @constant
     def TRACK_MAP():
         return "/trackmap/"
+
+    @constant
+    def CALLBACK():
+        return '/notifications/callback'
+
+    @constant
+    def CALLBACK_SOURCE():
+        return '/notifications/source'
 
 
 class ErrorMessages:

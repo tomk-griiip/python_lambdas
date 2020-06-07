@@ -30,6 +30,11 @@ Parameters:
       - stage
       - prod
 
+  api_get_away_key:
+    Type: String
+    Default: sBTloeh98b1csyMLG7kuJ3xdYehFjeEJ3gpVIgyr
+    Description: the api key for api get away
+
 Mappings:
   # production api url "https://2kdzicozch.execute-api.eu-central-1.amazonaws.com/prod/api/v1"
   # test api url #http://2kdzicozch.execute-api.eu-central-1.amazonaws.com/prod/api/test/
@@ -81,24 +86,28 @@ Mappings:
 
   sqs:
     dev:
+      producer-to-consumer_name: processLaps_producer-to-consumer-test
       producer-to-consumer_arn: arn:aws:sqs:eu-central-1:645717288378:processLaps_producer-to-consumer-test
       producer-to-consumer_url: https://sqs.eu-central-1.amazonaws.com/645717288378/processLaps_producer-to-consumer-test
       api_gateway_to_process_laps_arn: arn:aws:sqs:eu-central-1:645717288378:api_gateway_to_process_laps-test
       api_gateway_to_process_laps_url: https://sqs.eu-central-1.amazonaws.com/645717288378/api_gateway_to_process_laps-test
 
     test:
+      producer-to-consumer_name: processLaps_producer-to-consumer-test
       producer-to-consumer_arn: arn:aws:sqs:eu-central-1:645717288378:processLaps_producer-to-consumer-test
       producer-to-consumer_url: https://sqs.eu-central-1.amazonaws.com/645717288378/processLaps_producer-to-consumer-test
       api_gateway_to_process_laps_arn: arn:aws:sqs:eu-central-1:645717288378:api_gateway_to_process_laps-test
       api_gateway_to_process_laps_url: https://sqs.eu-central-1.amazonaws.com/645717288378/api_gateway_to_process_laps-test
 
     stage:
+      producer-to-consumer_name: processLaps_producer-to-consumer
       producer-to-consumer_arn: arn:aws:sqs:eu-central-1:645717288378:processLaps_producer-to-consumer
       producer-to-consumer_url: https://sqs.eu-central-1.amazonaws.com/645717288378/processLaps_producer-to-consumer
       api_gateway_to_process_laps_arn: arn:aws:sqs:eu-central-1:645717288378:api_gateway_to_process_laps
       api_gateway_to_process_laps_url: https://sqs.eu-central-1.amazonaws.com/645717288378/api_gateway_to_process_laps
 
     prod:
+      producer-to-consumer_name: processLaps_producer-to-consumer
       producer-to-consumer_arn: arn:aws:sqs:eu-central-1:645717288378:processLaps_producer-to-consumer
       producer-to-consumer_url: https://sqs.eu-central-1.amazonaws.com/645717288378/processLaps_producer-to-consumer
       api_gateway_to_process_laps_arn: arn:aws:sqs:eu-central-1:645717288378:api_gateway_to_process_laps
@@ -111,8 +120,7 @@ Globals:
       Variables:
         common_mappings: serverless.common.yml:custom # importing common values
         griiip_api_url: !FindInMap [griiip_api_full_url, !Ref Env, api_url]
-
-        griiip_api_key: sBTloeh98b1csyMLG7kuJ3xdYehFjeEJ3gpVIgyr
+        griiip_api_key: !Ref api_get_away_key
         cache_ddb_table_name: !FindInMap [Dynamo_Db, !Ref Env, cache_ddb_table]
         cache_ddb_table_key: prefix_lap_id
         accountId: 645717288378
@@ -133,15 +141,27 @@ Resources:
       AutoPublishAlias: !Ref Env
       # Grants this function permission to call lambda:InvokeFunction
       Policies:
+        - SQSPollerPolicy:
+            QueueName: !FindInMap [sqs, !Ref Env, producer-to-consumer_name]
         - Version: "1"
           Statement:
-            - Effect: "Allow"
+            - Sid: cloudWatchPolicy
+              Effect: "Allow"
+              Action:
+                - "logs:CreateLogGroup"
+                - "logs:CreateLogStream"
+                - "logs:PutLogEvents"
+              Resource: "arn:aws:logs:*:*:*"
+            - Sid: lambdaInvokeiton
+              Effect: "Allow"
               Action:
                 - "lambda:InvokeFunction"
+                -
               Resource: '*'
       DeploymentPreference:
 # Specifies the deployment configuration
           Type: Linear10PercentEvery1Minute
+
       Environment:
         Variables:
           MAX_ACC_PERCENT: 0.80
@@ -169,10 +189,36 @@ Resources:
       Handler: src.producer.producer_lambda.lambda_handler
       AutoPublishAlias: !Ref Env
       Policies:
-        - Version: "1"
+        - Statement:
+            - Sid: sqsPutAndGetPolicy
+              Effect: "Allow"
+              Action:
+                - "sqs:SendMessage"
+                - "sqs:ReceiveMessage"
+              Resource: !FindInMap [sqs, !Ref Env, producer-to-consumer_arn]
+
+            - Sid: DynamoDbPutDeletUpdateItemPolicy
+              Effect: "Allow"
+              Action:
+                - "dynamodb:PutItem"
+                - "dynamodb:Delete*"
+                - "dynamodb:Update*"
+              Resource: "*"
+
+            - Sid: cloudWatchPolicy
+              Effect: "Allow"
+              Action:
+                - "logs:CreateLogGroup"
+                - "logs:CreateLogStream"
+                - "logs:PutLogEvents"
+              Resource: "arn:aws:logs:*:*:*"
+        - SQSPollerPolicy:
+            QueueName: !FindInMap [sqs, !Ref Env, producer-to-consumer_name]
+
       DeploymentPreference:
 # Specifies the deployment configuration
           Type: Linear10PercentEvery1Minute
+          Hooks: !Ref newLapBeforeAllowTraffic
       Environment:
         Variables:
           responseQueue: !FindInMap [sqs, !Ref Env, producer-to-consumer_url]
@@ -181,7 +227,7 @@ Resources:
         ApiLapStart:
           Type: Api
           Properties:
-            Path: /lapStart
+            Path: /newLap
             Method: ANY
   #session end lambda
   sessionEnd:
@@ -197,16 +243,77 @@ Resources:
           driverLapsTable: driverlaps
           responseQueue: !FindInMap [sqs, !Ref Env, producer-to-consumer_url]
       Policies:
-        - Version: "1"
+        - Statement:
+            - Sid: sqsPutAndGetPolicy_sessionEnd
+              Effect: "Allow"
+              Action:
+                - "sqs:SendMessage"
+                - "sqs:ReceiveMessage"
+              Resource: !FindInMap [sqs, !Ref Env, producer-to-consumer_arn]
+
+            - Sid: cloudWatchPolicy
+              Effect: "Allow"
+              Action:
+                - "logs:CreateLogGroup"
+                - "logs:CreateLogStream"
+                - "logs:PutLogEvents"
+              Resource: "arn:aws:logs:*:*:*"
+        - SQSPollerPolicy:
+            QueueName: !FindInMap [sqs, !Ref Env, producer-to-consumer_name]
       DeploymentPreference:
 # Specifies the deployment configuration
           Type: Linear10PercentEvery1Minute
+          Hooks: !Ref sessionEndBeforeAllowTraffic
       Events:
         sessionEnd:
           Type: Api
           Properties:
             Path: /SessionEnd
             Method: ANY
+  #before the deploy of session_end lambda this function will run
+  #and insert new callback and source if needed
+  sessionEndBeforeAllowTraffic:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Runtime: python3.7
+      Handler: src.beforeAllowTrafic.sessionEndbeforeAllowTrafficLambda.lambda_handler
+      Policies:
+        - Version: "2012-10-17"
+          # Grants this function permission to call codedeploy:PutLifecycleEventHookExecutionStatus
+          Statement:
+            - Effect: "Allow"
+              Action:
+                - "codedeploy:PutLifecycleEventHookExecutionStatus"
+              Resource:
+                !Sub 'arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentgroup:${ServerlessDeploymentApplication}/*'
+      FunctionName: 'CodeDeployHook_preTrafficHook'
+      Environment:
+        Variables:
+          funcToRegistar: SessionEnd
+          notificationSorceName: rank-engine.session-ended
+  #before the deploy of producer lambda this function will run
+  #and insert new callback and source if needed
+  newLapBeforeAllowTraffic:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Runtime: python3.7
+      Handler: src.beforeAllowTrafic.sessionEndbeforeAllowTrafficLambda.lambda_handler
+      Policies:
+        - Version: "2012-10-17"
+          # Grants this function permission to call codedeploy:PutLifecycleEventHookExecutionStatus
+          Statement:
+            - Effect: "Allow"
+              Action:
+                - "codedeploy:PutLifecycleEventHookExecutionStatus"
+              Resource:
+                !Sub 'arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentgroup:${ServerlessDeploymentApplication}/*'
+      FunctionName: 'CodeDeployHook_preTrafficHook'
+      Environment:
+        Variables:
+          funcToRegistar: newLap
+          notificationSorceName: rank-engine.new-lap
 
 
 

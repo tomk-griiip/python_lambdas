@@ -21,6 +21,12 @@ class ApiException(Exception):
         Exception.__init__(self, "API Internal Server Error: in lap {}".format(lap_name))
 
 
+class ErrorApiException(Exception):
+    def __init__(self, service, statuseCode, txt):
+        Exception.__init__(self, f"api call to {service}return status :{statuseCode} "
+                                 f"with message :{txt}")
+
+
 class DynamoDbBadStatusCode(Exception):
     def __init__(self, statusCode: int):
         message = f"DynamoDb commend reDturn status code {statusCode}"
@@ -54,4 +60,3 @@ class CantConnectToDbException(Exception):
 class SqlCursorNoneException(Exception):
     def __init__(self, ops: str):
         super().__init__(f"sql {ops} operation filed {traceback.print_exc()}")
-
