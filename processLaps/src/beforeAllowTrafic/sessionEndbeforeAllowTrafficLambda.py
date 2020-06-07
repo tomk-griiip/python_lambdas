@@ -1,7 +1,7 @@
 import os
-from logging import error, info, warning, critical
 from .callback_handler import Callback, NotExistingSource
 from ..griiip_exeptions import ErrorApiException
+from . import logger
 
 
 def lambda_handler(event, context):
@@ -25,12 +25,12 @@ def lambda_handler(event, context):
                 res = callbackHandler.subscribeToEvent(sourceName=source,
                                                        callBackId=id__)
             except NotExistingSource as sourceError:
-                error(sourceError)
+                logger.error(sourceError)
                 ens.append(sourceError)
                 pass
 
             if res != 200:
-                error(f"callback id {id__}\n didnt register to source event {source}")
+                logger.error(f"callback id {id__}\n didnt register to source event {source}")
 
             ens.append(res)
 
@@ -43,5 +43,5 @@ def lambda_handler(event, context):
         pass
 
     finally:
-        info(ens)
+        logger.info(ens)
         return ens

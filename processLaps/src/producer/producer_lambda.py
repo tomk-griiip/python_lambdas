@@ -10,7 +10,7 @@ from ..db_wrapper import DbPyMySQL, DynamoDb
 # as ddb, api as api_db
 import traceback
 from ..sql_pool_connection import ConnectionPool
-
+from . import logger
 """
 create sql pool connection
 """
@@ -47,14 +47,14 @@ def put_previous_lap_to_sqs(lap: LapBean) -> bool:
         )
 
         if res['ResponseMetadata']['HTTPStatusCode'] != 200:
-            print(f"error in sqs function sqs message : {sqsMessage}")
+            logger.error(f"error in sqs function sqs message : {sqsMessage}")
             raise ClientError
 
     except Exception as e:
-        print(f"sqs error : {e}")
+        logger.error(f"sqs error : {e}")
         return False
     return True
-    print(f"sqs response {res}")
+    logger.info(f"sqs response {res}")
 
 
 class LambdaLogic:
@@ -79,11 +79,11 @@ class LambdaLogic:
             ddb = DynamoDb()
             is_success, lap, batch = self.insert_lap_to_dynamo_db_cache_table(lap=lap)
             if not is_success:
-                print(f"{PROCESS_NAME}: error at insert_lap_to_dynamo_db_cache_table")
+                logger.warning(f"{PROCESS_NAME}: error at insert_lap_to_dynamo_db_cache_table")
                 return
             # try to insert lap to mysql (but do n ot commit )
             if not self.insert_lap_to_mysql_no_commit(lap=lap):
-                print(f"{PROCESS_NAME}: error at insert_lap_to_mysql_no_commit")
+                logger.warning(f"{PROCESS_NAME}: error at insert_lap_to_mysql_no_commit")
                 return
             # check if lap number is > 0 if true put the previous lap to process
             # (because if this lap was insert to queue its mean previous lap is finish)
@@ -92,20 +92,20 @@ class LambdaLogic:
             # and
             # lap inserted to mysql insert the lap to sqs queue to keep calculate this lap
             if not_lap_zero and not put_previous_lap_to_sqs(lap=lap):
-                print(f"{PROCESS_NAME}: error at put_lap_to_sqs")
+                logger.warning(f"{PROCESS_NAME}: error at put_lap_to_sqs")
                 return  # TODO need to write rollback logic in failed scenario
             self.mysql_commit()  # commit transaction to mysql
 
         except DynamoDbBadStatusCode as dbs:
-            print(f"{PROCESS_NAME} error : {dbs}")
+            logger.error(f"{PROCESS_NAME} error : {dbs}")
 
         except ClientError as cerr:
-            print(traceback.format_stack())
-            print(f"{PROCESS_NAME} error: {cerr}")
+            logger.error(traceback.format_stack())
+            logger.error(f"{PROCESS_NAME} error: {cerr}")
 
         except Exception as e:
-            print(traceback.format_stack())
-            print(f"{PROCESS_NAME} error: {e}")
+            logger.error(traceback.format_stack())
+            logger.error(f"{PROCESS_NAME} error: {e}")
         finally:
             return lap.lapId
 
@@ -123,10 +123,10 @@ class LambdaLogic:
                       f"'{lap.lap.userId}', '{lap.lap.lapStartTime}', '{lap_time}')"
         try:
             self.db.put(sql_cmd=insert, not_commit=True)
-            print("""ADDED LAP: {} INTO DRIVERLAPS TABLE""".format(lap.lapId))
+            logger.info("""ADDED LAP: {} INTO DRIVERLAPS TABLE""".format(lap.lapId))
             return True
         except Exception as e:
-            print(f"error when insert lap {lap.lapId} \n error: {e}")
+            logger.error(f"error when insert lap {lap.lapId} \n error: {e}")
             return False
 
     def insert_lap_to_dynamo_db_cache_table(self, lap: LapBean) -> bool:
@@ -161,7 +161,7 @@ class LambdaLogic:
                 }
             ])
         except Exception as e:
-            print(f"exeption in insert lap to dynamo db lap number {lap.lapId}\n exception: {e}")
+            logger.error(f"exeption in insert lap to dynamo db lap number {lap.lapId}\n exception: {e}")
             raise DynamoDbBadStatusCode(statusCode=500)
             return False, lap
 
@@ -192,7 +192,7 @@ def lambda_handler(event, context):
         laps.append(__lapId)
 
     except Exception as e:
-        print(f"exception laps producer : {e}")
+        logger.error(f"exception laps producer : {e} \n {traceback.format_exc()}")
 
     return {
         "statusCode": 200,

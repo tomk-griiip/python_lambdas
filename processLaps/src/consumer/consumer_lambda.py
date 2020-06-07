@@ -11,7 +11,7 @@ from ..interfaces import IDataBaseClient
 from ..lambda_utils import *
 from ..griiip_const import net, classifications, errorMessages
 from ..db_wrapper import DbApiWrapper
-
+from . import logger
 db = DbApiWrapper(api_address=environ('griiip_api_url'), api_key=environ('griiip_api_key'))
 laps_from_dynamo_table = os.environ['ddb_lap_table']
 
@@ -88,20 +88,20 @@ def lambda_handler(event, context):
         trace = traceback.format_stack()
         res_message = griiipException
         statusCode = 501  # griiip custom exception status code
-        print(f"{ERROR_PREFIX} {type(griiipException)} error happened info : "
+        logger.error(f"{ERROR_PREFIX} {type(griiipException)} error happened info : "
               f"{griiipException} \n {trace}")
 
     except TypeError as te:
         res_message = te
         statusCode = 502
         trace = traceback.format_stack()
-        print(f"{ERROR_PREFIX} type error happened info : {te} \n {trace}")
+        logger.error(f"{ERROR_PREFIX} type error happened info : {te} \n {trace}")
 
     except Exception as e:
         trace = traceback.format_stack()
         res_message = e
         statusCode = 500  # general exception status code
-        print(f"{ERROR_PREFIX} error {e} \n trace :: -> {trace}")
+        logger.error(f"{ERROR_PREFIX} error {e} \n trace :: -> {trace}")
 
     finally:
         return {
@@ -145,15 +145,15 @@ def handle_lap(record: dict, conn):
 
     except KpiLambdaError as kpiError:
         error = f"{lapId} {errorMessages.MYSQL_MISSING_DATA} {kpiError}"
-        print(f"{error} \n {traceback.format_stack()}")
+        logger.error(f"{error} \n {traceback.format_stack()}")
 
     except (RunDataException, DriverLapsException, TracksException) as griiip_e:
         error = f"{lapId} {errorMessages.MYSQL_MISSING_DATA} \n {griiip_e}"
-        print(f"{error} \n {traceback.format_stack()}")
+        logger.error(f"{error} \n {traceback.format_stack()}")
 
     except Exception as e:
         error = f"Exception at lapId {lapId}\n {e}"
-        print(f"{error} \n {traceback.format_stack()}")
+        logger.error(f"{error} \n {traceback.format_stack()}")
 
     finally:
         columnToUpdate: {} = lap.getColumnToUpdate()

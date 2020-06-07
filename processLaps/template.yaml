@@ -5,6 +5,15 @@ Description: >
   AWS
 
   Sample SAM Template for AWS
+
+  logs levels | numeric value
+  ------------------------------
+  CRITICAL    | 50
+  ERROR       | 40
+  WARNING     | 30
+  INFO        | 20
+  DEBUG       | 10
+  NOTSET      | 0
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Parameters:
   Region:
@@ -47,6 +56,16 @@ Mappings:
       api_url: https://2kdzicozch.execute-api.eu-central-1.amazonaws.com/prod/api/v1
     prod:
       api_url: https://2kdzicozch.execute-api.eu-central-1.amazonaws.com/prod/api/v1
+
+  logLevel:
+    dev:
+      level: "10"
+    test:
+      level: "20"
+    stage:
+      level: "20"
+    prod:
+      level: "20"
 
   mySql:
     dev:
@@ -113,11 +132,22 @@ Mappings:
       api_gateway_to_process_laps_arn: arn:aws:sqs:eu-central-1:645717288378:api_gateway_to_process_laps
       api_gateway_to_process_laps_url: https://sqs.eu-central-1.amazonaws.com/645717288378/api_gateway_to_process_laps
 
+  kpiLambdas:
+    dev:
+      g1: "arn:aws:lambda:eu-central-1:645717288378:function:test_tom"
+    test:
+      g1: "arn:aws:lambda:eu-central-1:645717288378:function:test_tom"
+    stage:
+      g1: "arn:aws:lambda:eu-central-1:645717288378:function:test_tom"
+    prod:
+      g1: "arn:aws:lambda:eu-central-1:645717288378:function:test_tom"
+
 Globals:
   Function:
     Timeout: 300
     Environment:
       Variables:
+        logLevel: !FindInMap [logLevel, !Ref Env, level]
         common_mappings: serverless.common.yml:custom # importing common values
         griiip_api_url: !FindInMap [griiip_api_full_url, !Ref Env, api_url]
         griiip_api_key: !Ref api_get_away_key
@@ -129,7 +159,7 @@ Globals:
         my_sql_pass: !FindInMap [mySql, !Ref Env, pass]
         my_sql_db: !FindInMap [mySql, !Ref Env, schma]
         rds_connection_pull_size: !Ref RDS_CONN_POOL_SIZE
-
+        g1CalcKpiFunc: !FindInMap [kpiLambdas, !Ref Env, g1]
 Resources:
   # consumer lambda
   consumer:
@@ -164,6 +194,7 @@ Resources:
 
       Environment:
         Variables:
+          logLevel: !FindInMap [logLevel, !Ref Env, level]
           MAX_ACC_PERCENT: 0.80
           FULL_LAP_FLOOR: 0.90
           FULL_LAP_CELL: 1.03
@@ -221,13 +252,14 @@ Resources:
           Hooks: !Ref newLapBeforeAllowTraffic
       Environment:
         Variables:
+          logLevel: !FindInMap [logLevel, !Ref Env, level]
           responseQueue: !FindInMap [sqs, !Ref Env, producer-to-consumer_url]
       Runtime: python3.7
       Events:
         ApiLapStart:
           Type: Api
           Properties:
-            Path: /newLap
+            Path: api/v1/newLap
             Method: ANY
   #session end lambda
   sessionEnd:
@@ -239,6 +271,7 @@ Resources:
       AutoPublishAlias: !Ref Env
       Environment:
         Variables:
+          logLevel: !FindInMap [logLevel, !Ref Env, level]
           driverLapFiledsToQuery: lapStartDate, TrackId, lapName, CarId, UserId
           driverLapsTable: driverlaps
           responseQueue: !FindInMap [sqs, !Ref Env, producer-to-consumer_url]
@@ -268,7 +301,7 @@ Resources:
         sessionEnd:
           Type: Api
           Properties:
-            Path: /SessionEnd
+            Path: api/v1/SessionEnd
             Method: ANY
   #before the deploy of session_end lambda this function will run
   #and insert new callback and source if needed
@@ -290,6 +323,7 @@ Resources:
       FunctionName: 'CodeDeployHook_preTrafficHook'
       Environment:
         Variables:
+          logLevel: !FindInMap [logLevel, !Ref Env, level]
           funcToRegistar: SessionEnd
           notificationSorceName: rank-engine.session-ended
   #before the deploy of producer lambda this function will run
@@ -312,7 +346,8 @@ Resources:
       FunctionName: 'CodeDeployHook_preTrafficHook'
       Environment:
         Variables:
-          funcToRegistar: newLap
+          logLevel: !FindInMap [logLevel, !Ref Env, level]
+          funcToRegistar: api/v1newLap
           notificationSorceName: rank-engine.new-lap
 
 

@@ -1,6 +1,6 @@
 from .griiip_exeptions import CantConnectToDbException
 import time
-
+from . import logger
 
 def ifNotConnectDo(func):
     """
@@ -63,6 +63,6 @@ def execution_time(func):
     def inner(*args, **kwargs):
         start_time = time.time()
         func(*args, **args)
-        print(f"--- {time.time() - start_time} execution time in seconds ---")
+        logger.debug(f"--- {time.time() - start_time} execution time in seconds ---")
 
     return inner

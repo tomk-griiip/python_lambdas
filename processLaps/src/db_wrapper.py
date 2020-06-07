@@ -9,6 +9,7 @@ from boto3.dynamodb.conditions import Key
 from .griiip_exeptions import SqlCursorNoneException
 from .interfaces import IDataBaseClient
 from .decorators import ifNotConnectDo, addTable
+from . import logger
 
 
 class DbPyMySQL(IDataBaseClient):
@@ -19,9 +20,6 @@ class DbPyMySQL(IDataBaseClient):
         self.getConnection = mySqlPool.get_connection
         self.conn = self.getConnection()  # None
         # self.is_conned = self._connect()
-
-    def __del__(self):
-        self.conn.close()
 
     def _is_connect(self):
         if not self.conn:
@@ -37,7 +35,7 @@ class DbPyMySQL(IDataBaseClient):
             return True
 
         except Exception as e:
-            print(f"Connect to MySQL Server Failed\n {e}")
+            logger.error(f"Connect to MySQL Server Failed\n {e}")
             return False
 
     def __query(self, sql, **kwargs):
@@ -52,7 +50,7 @@ class DbPyMySQL(IDataBaseClient):
                 break
 
             except (pymysql.InterfaceError, pymysql.OperationalError) as e:
-                print(f"COULD'T EXECUTE QUERY: {sql} \n RETRY ATTEMPT: {i + 1} \n {traceback.format_exc()}")
+                logger.error(f"COULD'T EXECUTE QUERY: {sql} \n RETRY ATTEMPT: {i + 1} \n {traceback.format_exc()}")
                 cursor = None
 
         return cursor
@@ -86,11 +84,11 @@ class DbPyMySQL(IDataBaseClient):
             return cursor.fetchall()
 
         except SqlCursorNoneException as cursorNone:
-            print(cursorNone)
+            logger.error(cursorNone)
             return None
 
         except Exception as e:
-            print(f"query filed err {e} \n {traceback.format_exc()}")
+            logger.error(f"query filed err {e} \n {traceback.format_exc()}")
             return None
 
     @ifNotConnectDo
@@ -118,11 +116,11 @@ class DbPyMySQL(IDataBaseClient):
             return True
 
         except SqlCursorNoneException as cursorNone:
-            print(cursorNone)
+            logger.error(cursorNone)
             raise cursorNone
 
         except Exception as e:
-            print(f"query filed err {e} \n {traceback.format_exc()}")
+            logger.error(f"query filed err {e} \n {traceback.format_exc()}")
             raise e
 
     @ifNotConnectDo
@@ -152,11 +150,11 @@ class DbPyMySQL(IDataBaseClient):
             is_post = True
 
         except SqlCursorNoneException as cursorNone:
-            print(cursorNone)
+            logger.error(cursorNone)
             raise cursorNone
 
         except Exception as e:
-            print(f"query filed err {e} \n {traceback.format_exc()}")
+            logger.error(f"query filed err {e} \n {traceback.format_exc()}")
             raise e
 
         finally:
@@ -188,11 +186,11 @@ class DbPyMySQL(IDataBaseClient):
             return True
 
         except SqlCursorNoneException as cursorNone:
-            print(cursorNone)
+            logger.error(cursorNone)
             raise cursorNone
 
         except Exception as e:
-            print(f"query filed err {e} \n {traceback.format_exc()}")
+            logger.error(f"query filed err {e} \n {traceback.format_exc()}")
             raise e
 
 

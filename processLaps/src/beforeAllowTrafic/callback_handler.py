@@ -76,7 +76,7 @@ class Callback:
             if source is None:
                 raise NotExistingSource(source['_id'])
 
-            debug(f"going to register to event : {source['name']}")
+            info(f"going to register to event : {source['name']}")
             url = f"{net.CALLBACK_SOURCE}/{source['_id']}/callback/{callBackId}"
 
             httpsRes_ = self.api.put(url)

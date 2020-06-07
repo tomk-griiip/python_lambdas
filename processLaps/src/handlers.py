@@ -12,7 +12,7 @@ from datetime import datetime
 import os
 from src.interfaces import IDataBase, IDataBaseClient
 from src.griiip_exeptions import TracksException, RunDataException, ApiException
-
+from . import logger
 
 class LapBean(object):
     """
@@ -91,7 +91,7 @@ class RunData(object):
         # call API to get runData
         _http_res = db.get(net.RUNDATA_URL, **kwargs)
         if _http_res.status_code != 200:
-            print(f"{_http_res.status_code}: {_http_res.text}")
+            logger.error(f"{_http_res.status_code}: {_http_res.text}")
             return []
 
         runData: dict = _http_res.json()['data']
@@ -114,7 +114,7 @@ class RunData(object):
         # the number of glitches in thr beginning of the lap
         num_dist_glit: int = removed_first_bad_distance_rows()
         if num_dist_glit > 0:
-            print(f"FOUND {num_dist_glit} BAD ROWS FOR LAP {kwargs['lapName']}"
+            logger.warning(f"FOUND {num_dist_glit} BAD ROWS FOR LAP {kwargs['lapName']}"
                   f"\nLAP FIRST ROWS DISTANCE IS BIGGER THEN THE NEXT ROWS")
 
         return runData[num_dist_glit:]  # remove the rows with the distance glitches in the
@@ -203,7 +203,7 @@ class Lap(Constant):
 
             if _http_res.status_code != 200:
                 length: float = 0.0
-                print(f"{_http_res.status_code}: {_http_res.text}\n track gps length is 0")
+                logger.warning(f"{_http_res.status_code}: {_http_res.text}\n track gps length is 0")
 
             else:
                 length: float = _http_res.json()['gpsLength']
@@ -244,15 +244,15 @@ class Lap(Constant):
             res = self._db.put(net.UPDATE_DRIVER_LAP_URL, json={**self._columns_to_update})
 
         except KeyError as ke:
-            print(f'kwargs missing argument \n {ke}')
+            logger.error(f'kwargs missing argument \n {ke}')
             return net.FAILURE
 
         except ApiException as api_e:
-            print(f"db Api Exception : {api_e}")
+            logger.error(f"db Api Exception : {api_e}")
             return net.FAILURE
 
         except Exception as e:
-            print(f"DB Exception : {e}")
+            logger.error(f"DB Exception : {e}")
             return net.FAILURE
 
         if res.status_code == net.OK:

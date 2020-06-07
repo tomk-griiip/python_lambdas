@@ -1,6 +1,7 @@
 from src.griiip_exeptions import *
 from src.griiip_const import classifications as const
 from src.interfaces import IClassifier
+from . import logger
 
 
 class RuleBaseClassifier(IClassifier):
@@ -80,8 +81,8 @@ class RuleBaseClassifier(IClassifier):
                 else:
                     classification = const.NON_COMPETITIVE
         except Exception as e:
-            print(f" Exception raised in class RuleBaseClassifier._classify_full_lap"
-                  f" {e}")
+            logger.error(f" Exception raised in class RuleBaseClassifier._classify_full_lap"
+                         f" {e}")
         finally:
             return classification
 
@@ -122,7 +123,7 @@ class RuleBaseClassifier(IClassifier):
                 acc_comb = None
 
         except Exception as e:
-            print(f"in lap {lapId} exception raised in class classify function get_max_acc_comb {e}")
+            logger.error(f"in lap {lapId} exception raised in class classify function get_max_acc_comb {e}")
             acc_comb = None
 
         finally:
