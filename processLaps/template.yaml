@@ -147,6 +147,7 @@ Globals:
     Timeout: 300
     Environment:
       Variables:
+        apiGetAwayName: griiip_api
         logLevel: !FindInMap [logLevel, !Ref Env, level]
         common_mappings: serverless.common.yml:custom # importing common values
         griiip_api_url: !FindInMap [griiip_api_full_url, !Ref Env, api_url]
@@ -310,7 +311,7 @@ Resources:
     Properties:
       CodeUri: .
       Runtime: python3.7
-      Handler: src.beforeAllowTrafic.sessionEndbeforeAllowTrafficLambda.lambda_handler
+      Handler: src.beforeAllowTrafic.preDeployResourceCheck.lambda_handler
       Policies:
         - Version: "2012-10-17"
           # Grants this function permission to call codedeploy:PutLifecycleEventHookExecutionStatus
@@ -326,6 +327,9 @@ Resources:
           logLevel: !FindInMap [logLevel, !Ref Env, level]
           funcToRegistar: SessionEnd
           notificationSorceName: rank-engine.session-ended
+          apisRouts: newLap, SessionEnd
+          parentPath: /api/v1
+
   #before the deploy of producer lambda this function will run
   #and insert new callback and source if needed
   newLapBeforeAllowTraffic:
@@ -333,7 +337,7 @@ Resources:
     Properties:
       CodeUri: .
       Runtime: python3.7
-      Handler: src.beforeAllowTrafic.sessionEndbeforeAllowTrafficLambda.lambda_handler
+      Handler: src.beforeAllowTrafic.preDeployResourceCheck.lambda_handler
       Policies:
         - Version: "2012-10-17"
           # Grants this function permission to call codedeploy:PutLifecycleEventHookExecutionStatus
@@ -349,6 +353,8 @@ Resources:
           logLevel: !FindInMap [logLevel, !Ref Env, level]
           funcToRegistar: api/v1newLap
           notificationSorceName: rank-engine.new-lap
+          apisRouts: newLap, SessionEnd
+          parentPath: /api/v1
 
 
 
