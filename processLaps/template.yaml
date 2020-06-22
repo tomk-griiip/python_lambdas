@@ -16,6 +16,10 @@ Description: >
   NOTSET      | 0
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Parameters:
+  GriiipApiId:
+    Type: String
+    Default: 2kdzicozch
+
   Region:
     Type: String
     Default: 'eu-central-1'
@@ -142,6 +146,16 @@ Mappings:
     prod:
       g1: "arn:aws:lambda:eu-central-1:645717288378:function:test_tom"
 
+  APIGetAwayYaml:
+    dev:
+      Location: ApiGetAway/griiip_api-test.yaml
+    test:
+      Location: ApiGetAway/griiip_api-test.yaml
+    stage:
+      Location: ApiGetAway/griiip_api-prod.yaml
+    prod:
+      Location: ApiGetAway/griiip_api-prod.yaml
+
 Globals:
   Function:
     Timeout: 300
@@ -154,7 +168,6 @@ Globals:
         griiip_api_key: !Ref api_get_away_key
         cache_ddb_table_name: !FindInMap [Dynamo_Db, !Ref Env, cache_ddb_table]
         cache_ddb_table_key: prefix_lap_id
-        accountId: 645717288378
         my_sql_host: !FindInMap [mySql, !Ref Env, host]
         my_sql_user: !FindInMap [mySql, !Ref Env, user]
         my_sql_pass: !FindInMap [mySql, !Ref Env, pass]
@@ -162,6 +175,7 @@ Globals:
         rds_connection_pull_size: !Ref RDS_CONN_POOL_SIZE
         g1CalcKpiFunc: !FindInMap [kpiLambdas, !Ref Env, g1]
 Resources:
+
   # consumer lambda
   consumer:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -169,6 +183,7 @@ Resources:
       CodeUri: .
       Handler: src.consumer.consumer_lambda.lambda_handler
       Runtime: python3.7
+      FunctionName: !Join [ "", [ !Ref Env, "-consumer"]]
       AutoPublishAlias: !Ref Env
       # Grants this function permission to call lambda:InvokeFunction
       Policies:
@@ -219,6 +234,7 @@ Resources:
     Properties:
       CodeUri: .
       Handler: src.producer.producer_lambda.lambda_handler
+      FunctionName: !Join [ "", [ !Ref Env, "-producer"]]
       AutoPublishAlias: !Ref Env
       Policies:
         - Statement:
@@ -260,7 +276,8 @@ Resources:
         ApiLapStart:
           Type: Api
           Properties:
-            Path: api/v1/newLap
+            Stage: !Ref Env
+            Path: /processLapEvents/v1/newLap
             Method: ANY
   #session end lambda
   sessionEnd:
@@ -269,6 +286,7 @@ Resources:
       CodeUri: .
       Runtime: python3.7
       Handler: src.sessionEnd.session_end_lambda.lambda_handler
+      FunctionName: !Join [ "", [ !Ref Env, "-sessionEnd"]]
       AutoPublishAlias: !Ref Env
       Environment:
         Variables:
@@ -302,7 +320,8 @@ Resources:
         sessionEnd:
           Type: Api
           Properties:
-            Path: api/v1/SessionEnd
+            Stage: !Ref Env
+            Path: /processLapEvents/v1/SessionEnd
             Method: ANY
   #before the deploy of session_end lambda this function will run
   #and insert new callback and source if needed
@@ -327,8 +346,8 @@ Resources:
           logLevel: !FindInMap [logLevel, !Ref Env, level]
           funcToRegistar: SessionEnd
           notificationSorceName: rank-engine.session-ended
-          apisRouts: newLap, SessionEnd
-          parentPath: /api/v1
+          apisRouts: SessionEnd
+          parentPath: /processLapEvents/v1
 
   #before the deploy of producer lambda this function will run
   #and insert new callback and source if needed
@@ -353,9 +372,8 @@ Resources:
           logLevel: !FindInMap [logLevel, !Ref Env, level]
           funcToRegistar: api/v1newLap
           notificationSorceName: rank-engine.new-lap
-          apisRouts: newLap, SessionEnd
-          parentPath: /api/v1
-
+          apisRouts: newLap
+          parentPath: /processLapEvents/v1
 
 
 

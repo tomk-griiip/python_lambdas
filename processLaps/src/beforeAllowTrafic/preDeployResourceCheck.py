@@ -7,6 +7,8 @@ from . import logger
 
 codeDeploy = boto3.client('codedeploy')
 api = boto3.client('apigateway')
+AWS_REGION = os.environ['AWS_REGION']
+prefixApiGetAwayUrl = f".execute-api.{AWS_REGION}.amazonaws.com/"
 
 
 class Messages(enum.Enum):
@@ -85,6 +87,7 @@ def eventSourcingCheck() -> tuple:
 
 
 def apiResourceCheck() -> bool:
+
     response = api.get_rest_apis(limit=123)
     if response['ResponseMetadata']['HTTPStatusCode'] != 200:
         logger.debug(f"api getaway return {response['ResponseMetadata']['HTTPStatusCode']}")
@@ -147,7 +150,6 @@ def apiResourceCheck() -> bool:
     if response['ResponseMetadata']['HTTPStatusCode'] != 200:
         logger.debug(f"api getaway return {response['ResponseMetadata']['HTTPStatusCode']}")
         return False, f"{Messages.api_failed.value}: \n {response['ResponseMetadata']['HTTPStatusCode']}"
-
 
 
 def sqsResourceCheck():

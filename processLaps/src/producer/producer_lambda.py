@@ -23,7 +23,7 @@ rdsConfig = {'host': os.environ["my_sql_host"],
 
 mySqlPool = ConnectionPool(size=int(os.environ["rds_connection_pull_size"]), name='pool1', **rdsConfig)
 sqs = boto3.client('sqs')
-queueUrl = os.environ['responseQueue']
+queueUrl = os.environ['QUEUE_URL']
 PROCESS_NAME = "laps_producer"
 DDB_CACHE_TABLE = os.environ['cache_ddb_table_name']
 
