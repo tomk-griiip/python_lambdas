@@ -270,7 +270,7 @@ Resources:
       Environment:
         Variables:
           logLevel: !FindInMap [logLevel, !Ref Env, level]
-          responseQueue: !FindInMap [sqs, !Ref Env, producer-to-consumer_url]
+          QUEUE_URL: !FindInMap [sqs, !Ref Env, producer-to-consumer_url]
       Runtime: python3.7
       Events:
         ApiLapStart:
@@ -293,7 +293,7 @@ Resources:
           logLevel: !FindInMap [logLevel, !Ref Env, level]
           driverLapFiledsToQuery: lapStartDate, TrackId, lapName, CarId, UserId
           driverLapsTable: driverlaps
-          responseQueue: !FindInMap [sqs, !Ref Env, producer-to-consumer_url]
+          QUEUE_URL: !FindInMap [sqs, !Ref Env, producer-to-consumer_url]
       Policies:
         - Statement:
             - Sid: sqsPutAndGetPolicy_sessionEnd

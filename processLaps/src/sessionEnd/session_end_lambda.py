@@ -18,7 +18,7 @@ rdsConfig = {'host': os.environ["my_sql_host"],
 
 mySqlPool = ConnectionPool(size=int(os.environ["rds_connection_pull_size"]), name='pool1', **rdsConfig)
 
-QUEUE_URL = os.environ['responseQueue']
+QUEUE_URL = os.environ['QUEUE_URL']
 sqs = boto3.client('sqs')
 
 
