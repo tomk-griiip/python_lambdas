@@ -1,19 +1,9 @@
 AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
-Description: >
+Description: |
   AWS
-
   Sample SAM Template for AWS
-
-  logs levels | numeric value
-  ------------------------------
-  CRITICAL    | 50
-  ERROR       | 40
-  WARNING     | 30
-  INFO        | 20
-  DEBUG       | 10
-  NOTSET      | 0
-
+  logs levels | numeric value ------------------------------ CRITICAL    | 50 ERROR       | 40 WARNING     | 30 INFO        | 20 DEBUG       | 10 NOTSET      | 0
 Mappings:
   logLevel:
     dev:
@@ -46,7 +36,7 @@ Globals:
         common_mappings: serverless.common.yml:custom
         griiip_api_url: !Ref griiipApiUrl
         griiip_api_key: !Ref apiGetAwayKey
-        cache_ddb_table_name: !GetAtt cashTable.TableName
+        cache_ddb_table_name: !GetAtt cashTable.Name
         cache_ddb_table_key: prefix_lap_id
         my_sql_host: !Ref MySqlHost
         my_sql_user: !Ref MySqlUser
@@ -225,7 +215,10 @@ Resources:
           PART_LAP_FLOOR: 0.1
           runDataRetrieveLimit: 5000
           runDataPaging: 1
-          ddb_lap_table: !FindInMap [DynamoDb, !Ref Env, ddbLapTable]
+          ddb_lap_table: !FindInMap
+            - DynamoDb
+            - !Ref Env
+            - ddbLapTable
           ddb_lap_table_key: lap_id
           year_prefix: 20
           kpi_num_of_points: 5
@@ -290,7 +283,7 @@ Parameters:
     Description: Environment Name (injected by Stackery at deployment time)
   Region:
     Type: String
-    Default: 'eu-central-1'
+    Default: eu-central-1
   AccountId:
     Type: String
     Default: '645717288378'
