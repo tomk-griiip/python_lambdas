@@ -24,7 +24,7 @@ Mappings:
       level: '20'
     prod:
       level: '20'
-  Dynamo_Db:
+  DynamoDb:
     dev:
       ddb_lap_table: dashboard-test
     test:
@@ -225,10 +225,7 @@ Resources:
           PART_LAP_FLOOR: 0.1
           runDataRetrieveLimit: 5000
           runDataPaging: 1
-          ddb_lap_table: !FindInMap
-            - Dynamo_Db
-            - !Ref Env
-            - ddb_lap_table
+          ddb_lap_table: !FindInMap[DynamoDb, !Ref Env, ddb_lap_table]
           ddb_lap_table_key: lap_id
           year_prefix: 20
           kpi_num_of_points: 5
