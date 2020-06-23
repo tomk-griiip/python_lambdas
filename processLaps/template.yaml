@@ -36,7 +36,7 @@ Globals:
         common_mappings: serverless.common.yml:custom
         griiip_api_url: !Ref griiipApiUrl
         griiip_api_key: !Ref apiGetAwayKey
-        cache_ddb_table_name: !GetAtt cashTable.Name
+        cache_ddb_table_name: !GetAtt cashTable.cashTable
         cache_ddb_table_key: prefix_lap_id
         my_sql_host: !Ref MySqlHost
         my_sql_user: !Ref MySqlUser
