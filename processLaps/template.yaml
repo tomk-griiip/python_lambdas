@@ -258,28 +258,28 @@ Resources:
 Parameters:
   griiipApiUrl:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/Env
+    Default: /<EnvironmentName>/griiipApiUrl
   apiGetAwayKey:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/Env
+    Default: /<EnvironmentName>/apiGetAwayKey
   MySqlHost:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/Env
+    Default: /<EnvironmentName>/MySqlHost
   MySqlUser:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/Env
+    Default: /<EnvironmentName>/MySqlUser
   MySqlPass:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/Env
+    Default: /<EnvironmentName>/MySqlPass
   MySqlSchma:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/Env
+    Default: /<EnvironmentName>/MySqlSchma
   RdsConnPoolSize:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/Env
+    Default: /<EnvironmentName>/RdsConnPoolSize
   KpiLambda:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/Env
+    Default: /<EnvironmentName>/KpiLambda
   Env:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/Env
