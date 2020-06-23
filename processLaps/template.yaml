@@ -53,6 +53,8 @@ Globals:
         my_sql_pass: !Ref MySqlPass
         my_sql_db: !Ref MySqlSchma
         rds_connection_pull_size: !Ref RdsConnPoolSize
+        Region: !Ref Region
+        AccountId: !Ref AccountId
 Resources:
   producer:
     Type: AWS::Serverless::Function
@@ -289,3 +291,9 @@ Parameters:
   EnvironmentTagName:
     Type: String
     Description: Environment Name (injected by Stackery at deployment time)
+  Region:
+    Type: String
+    Default: 'eu-central-1'
+  AccountId:
+    Type: String
+    Default: '645717288378'
