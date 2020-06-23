@@ -26,13 +26,13 @@ Mappings:
       level: '20'
   DynamoDb:
     dev:
-      ddb_lap_table: dashboard-test
+      ddbLapTable: dashboard-test
     test:
-      ddb_lap_table: dashboard-test
+      ddbLapTable: dashboard-test
     stage:
-      ddb_lap_table: cars-live-status
+      ddbLapTable: cars-live-status
     prod:
-      ddb_lap_table: cars-live-status
+      ddbLapTable: cars-live-status
 Globals:
   Function:
     Timeout: 300
@@ -225,7 +225,7 @@ Resources:
           PART_LAP_FLOOR: 0.1
           runDataRetrieveLimit: 5000
           runDataPaging: 1
-          ddb_lap_table: !FindInMap [DynamoDb, !Ref Env, ddb_lap_table]
+          ddb_lap_table: !FindInMap [DynamoDb, !Ref Env, ddbLapTable]
           ddb_lap_table_key: lap_id
           year_prefix: 20
           kpi_num_of_points: 5
