@@ -287,6 +287,27 @@ Resources:
         PredefinedMetricSpecification:
           PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 Parameters:
+  griiipApiUrl:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/griiipApiUrl
+  apiGetAwayKey:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/apiGetAwayKey
+  MySqlHost:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/MySqlHost
+  MySqlUser:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/MySqlUser
+  MySqlPass:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/MySqlPass
+  MySqlSchma:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/MySqlSchma
+  RdsConnPoolSize:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/RdsConnPoolSize
   KpiLambda:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/KpiLambda
