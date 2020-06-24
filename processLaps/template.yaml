@@ -50,7 +50,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${StackTagName}-producer-${EnvironmentTagName}
-      Description: !Sub Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+      Description: !Sub Stack ${StackTagName} Environment ${EnvironmentTagName} Function Resources
       CodeUri: .
       AutoPublishAlias: !Ref Env
       Handler: src.producer.producer_lambda.lambda_handler
@@ -146,7 +146,7 @@ Resources:
     Properties:
       FunctionName: !Sub ${StackTagName}-sessionEnd-${EnvironmentTagName}
       AutoPublishAlias: !Ref Env
-      Description: !Sub Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+      Description: !Sub Stack ${StackTagName} Environment ${EnvironmentTagName} Function sessionEnd
       CodeUri: .
       Handler: src.sessionEnd.session_end_lambda.lambda_handler
       Runtime: python3.7
@@ -179,7 +179,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${StackTagName}-consumer-${EnvironmentTagName}
-      Description: !Sub Stack ${StackTagName} Environment ${EnvironmentTagName} Function ${ResourceName}
+      Description: !Sub Stack ${StackTagName} Environment ${EnvironmentTagName} Function consumer
       CodeUri: .
       Handler: src.consumer.consumer_lambda.lambda_handler
       Runtime: python3.7
