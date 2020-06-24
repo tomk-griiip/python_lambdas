@@ -49,8 +49,8 @@ Resources:
   producer:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${AWS::StackTagName}-producer-${AWS::EnvironmentTagName}
-      Description: !Sub Stack ${AWS::StackTagName} Environment ${AWS::EnvironmentTagName} Function Resources
+      FunctionName: !Sub ${StackTagName}-producer-${EnvironmentTagName}
+      Description: !Sub Stack ${StackTagName} Environment ${EnvironmentTagName} Function Resources
       CodeUri: .
       AutoPublishAlias: !Ref Env
       Handler: src.producer.producer_lambda.lambda_handler
@@ -91,14 +91,14 @@ Resources:
         - ApiId: !Ref ProcessLapApiGateway
           Stage: !Ref ProcessLapApiGateway.Stage
       Description: Use Plan for lambda base process lap
-      UsagePlanName: !Sub ${AWS::StackTagName}-api-plan-${AWS::EnvironmentTagName}
+      UsagePlanName: !Sub ${StackTagName}-api-plan-${EnvironmentTagName}
   ProcessLapApiKey:
     Type: AWS::ApiGateway::ApiKey
     DependsOn:
       - ProcessLapUsagePlan
     Properties:
       Enabled: true
-      Name: !Sub ${AWS::StackTagName}-api-key-${AWS::EnvironmentTagName}
+      Name: !Sub ${StackTagName}-api-key-${EnvironmentTagName}
       StageKeys:
         - RestApiId: !Ref ProcessLapApiGateway
           StageName: !Ref ProcessLapApiGateway.Stage
@@ -114,7 +114,7 @@ Resources:
   ProcessLapApiGateway:
     Type: AWS::Serverless::Api
     Properties:
-      Name: !Sub ${AWS::StackTagName}-api-${AWS::EnvironmentTagName}
+      Name: !Sub ${StackTagName}-api-${EnvironmentTagName}
       StageName: !Ref Env
       Cors: '''*'''
       Auth:
@@ -142,13 +142,13 @@ Resources:
   ProcessLapsProducerToConsumer:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: !Sub ${AWS::StackTagName}-ProducerToConsumer-${AWS::EnvironmentTagName}
+      QueueName: !Sub ${StackTagName}-ProducerToConsumer-${EnvironmentTagName}
   sessionEnd:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${AWS::StackTagName}-sessionEnd-${AWS::EnvironmentTagName}
+      FunctionName: !Sub ${StackTagName}-sessionEnd-${EnvironmentTagName}
       AutoPublishAlias: !Ref Env
-      Description: !Sub Stack ${AWS::StackTagName} Environment ${AWS::EnvironmentTagName} Function sessionEnd
+      Description: !Sub Stack ${StackTagName} Environment ${EnvironmentTagName} Function sessionEnd
       CodeUri: .
       Handler: src.sessionEnd.session_end_lambda.lambda_handler
       Runtime: python3.7
@@ -180,8 +180,8 @@ Resources:
   consumer:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${AWS::StackTagName}-consumer-${AWS::EnvironmentTagName}
-      Description: !Sub Stack ${AWS::StackTagName} Environment ${AWS::EnvironmentTagName} Function consumer
+      FunctionName: !Sub ${StackTagName}-consumer-${EnvironmentTagName}
+      Description: !Sub Stack ${StackTagName} Environment ${EnvironmentTagName} Function consumer
       CodeUri: .
       Handler: src.consumer.consumer_lambda.lambda_handler
       Runtime: python3.7
@@ -231,7 +231,7 @@ Resources:
   cashTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub ${AWS::StackTagName}-cashTable-${AWS::EnvironmentTagName}
+      TableName: !Sub ${StackTagName}-cashTable-${EnvironmentTagName}
       AttributeDefinitions:
         - AttributeName: 'prefix_lap_id '
           AttributeType: S
