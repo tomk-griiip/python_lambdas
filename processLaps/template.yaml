@@ -52,7 +52,7 @@ Resources:
       FunctionName: !Join ["",[!Ref StackTagName, "-producer-", !Ref EnvironmentTagName]]
       Description: !Join ["Stack",[!Ref StackTagName, "Environment", !Ref EnvironmentTagName, "Function Resources"]]
       CodeUri: .
-      AutoPublishAlias: !Ref Env
+      AutoPublishAlias: Live
       Handler: src.producer.producer_lambda.lambda_handler
       Runtime: python3.7
       MemorySize: 3008
@@ -130,7 +130,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Join ["",[!Ref StackTagName, "-sessionEnd-", !Ref EnvironmentTagName]]
-      AutoPublishAlias: !Ref Env
+      AutoPublishAlias: Live
       Description: !Join ["Stack",[!Ref StackTagName, "Environment", !Ref EnvironmentTagName, "Function sessionEnd"]]
       CodeUri: .
       Handler: src.sessionEnd.session_end_lambda.lambda_handler
@@ -203,7 +203,7 @@ Resources:
           Properties:
             Queue: !GetAtt ProcessLapsProducerToConsumer.Arn
             BatchSize: 1
-      AutoPublishAlias: !Ref Env
+      AutoPublishAlias: Live
       DeploymentPreference:
         Type: AllAtOnce
   cashTable:
@@ -229,11 +229,11 @@ Resources:
     Properties:
       MinCapacity: 1
       MaxCapacity: 20
-      ResourceId: !Join ["function:", [!Ref producer, ":", !Ref Env]]
+      ResourceId: !Sub function:${producer}:Live
       RoleARN: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency"
       ScalableDimension: lambda:function:ProvisionedConcurrency
       ServiceNamespace: lambda
-    DependsOn: producer
+    DependsOn: producerAliasLive
   producerScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
     Properties:
@@ -249,11 +249,11 @@ Resources:
     Properties:
       MinCapacity: 1
       MaxCapacity: 30
-      ResourceId: !Sub function:${consumer}:${Env}
+      ResourceId: !Sub function:${consumer}:Live
       RoleARN: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency"
       ScalableDimension: lambda:function:ProvisionedConcurrency
       ServiceNamespace: lambda
-    DependsOn: consumerAliastest
+    DependsOn: consumerAliasLive
     #DependsOn: consumer
   consumerScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
