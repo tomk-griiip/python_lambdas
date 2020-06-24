@@ -52,7 +52,7 @@ Resources:
       FunctionName: !Sub ${StackTagName}-producer-${EnvironmentTagName}
       Description: !Sub Stack ${StackTagName} Environment ${EnvironmentTagName} Function Resources
       CodeUri: .
-      AutoPublishAlias: live
+      AutoPublishAlias: !Ref Env
       Handler: src.producer.producer_lambda.lambda_handler
       Runtime: python3.7
       MemorySize: 3008
@@ -225,7 +225,7 @@ Resources:
           Properties:
             Queue: !GetAtt ProcessLapsProducerToConsumer.Arn
             BatchSize: 1
-      AutoPublishAlias: live
+      AutoPublishAlias: !Ref Env
       DeploymentPreference:
         Type: AllAtOnce
   cashTable:
