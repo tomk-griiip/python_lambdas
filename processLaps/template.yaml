@@ -181,7 +181,7 @@ Resources:
               Effect: Allow
               Action:
                 - lambda:InvokeFunction
-              Resource: !Ref KpiLambda #'*'
+              Resource: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${KpiLambda}*" #!Ref KpiLambda #'*'
       Environment:
         Variables:
           logLevel: !FindInMap
