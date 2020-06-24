@@ -25,7 +25,7 @@ Mappings:
       ddbLapTable: cars-live-status
 Globals:
   Function:
-    Timeout: 300
+    Timeout: !Ref recourseTimeOut
     Environment:
       Variables:
         apiGetAwayName: griiip_api
@@ -126,6 +126,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Join ["",[!Ref StackTagName, "-ProducerToConsumer-", !Ref EnvironmentTagName]]
+      VisibilityTimeout: !Ref recourseTimeOut
   sessionEnd:
     Type: AWS::Serverless::Function
     Properties:
@@ -272,6 +273,9 @@ Parameters:
   AccountId:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/AccountId
+  recourseTimeOut:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/recorecesTimeOut
   griiipApiUrl:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/griiipApiUrl
