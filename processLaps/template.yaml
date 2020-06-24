@@ -119,24 +119,7 @@ Resources:
       Cors: '''*'''
       Auth:
         ApiKeyRequired: true
-      DefinitionBody:
-        swagger: '2.0'
-        info: {}
-        paths:
-          /newLap:
-            x-amazon-apigateway-any-method:
-              x-amazon-apigateway-integration:
-                httpMethod: POST
-                type: aws_proxy
-                uri: !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${producerAlias[object Object]}/invocations'
-              responses: {}
-          /sessionEnd:
-            x-amazon-apigateway-any-method:
-              x-amazon-apigateway-integration:
-                httpMethod: POST
-                type: aws_proxy
-                uri: !Sub 'arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${sessionEndAlias[object Object]}/invocations'
-              responses: {}
+
       EndpointConfiguration: REGIONAL
       TracingEnabled: true
   ProcessLapsProducerToConsumer:
