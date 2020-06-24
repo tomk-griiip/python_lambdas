@@ -49,8 +49,8 @@ Resources:
   producer:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${StackTagName}-producer-${EnvironmentTagName}
-      Description: !Sub Stack ${StackTagName} Environment ${EnvironmentTagName} Function Resources
+      FunctionName: !Sub "${StackTagName}-producer-${EnvironmentTagName}"
+      Description: !Sub "Stack ${StackTagName} Environment ${EnvironmentTagName} Function Resources"
       CodeUri: .
       AutoPublishAlias: !Ref Env
       Handler: src.producer.producer_lambda.lambda_handler
@@ -91,14 +91,14 @@ Resources:
         - ApiId: !Ref ProcessLapApiGateway
           Stage: !Ref ProcessLapApiGateway.Stage
       Description: Use Plan for lambda base process lap
-      UsagePlanName: !Sub ${StackTagName}-api-plan-${EnvironmentTagName}
+      UsagePlanName: !Sub "${StackTagName}-api-plan-${EnvironmentTagName}"
   ProcessLapApiKey:
     Type: AWS::ApiGateway::ApiKey
     DependsOn:
       - ProcessLapUsagePlan
     Properties:
       Enabled: true
-      Name: !Sub ${StackTagName}-api-key-${EnvironmentTagName}
+      Name: !Sub "${StackTagName}-api-key-${EnvironmentTagName}"
       StageKeys:
         - RestApiId: !Ref ProcessLapApiGateway
           StageName: !Ref ProcessLapApiGateway.Stage
@@ -114,7 +114,7 @@ Resources:
   ProcessLapApiGateway:
     Type: AWS::Serverless::Api
     Properties:
-      Name: !Sub ${StackTagName}-api-${EnvironmentTagName}
+      Name: !Sub "${StackTagName}-api-${EnvironmentTagName}"
       StageName: !Ref Env
       Cors: '''*'''
       Auth:
@@ -142,13 +142,13 @@ Resources:
   ProcessLapsProducerToConsumer:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: !Sub ${StackTagName}-ProducerToConsumer-${EnvironmentTagName}
+      QueueName: !Sub "${StackTagName}-ProducerToConsumer-${EnvironmentTagName}"
   sessionEnd:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${StackTagName}-sessionEnd-${EnvironmentTagName}
+      FunctionName: !Sub "${StackTagName}-sessionEnd-${EnvironmentTagName}"
       AutoPublishAlias: !Ref Env
-      Description: !Sub Stack ${StackTagName} Environment ${EnvironmentTagName} Function sessionEnd
+      Description: !Sub "Stack ${StackTagName} Environment ${EnvironmentTagName} Function sessionEnd"
       CodeUri: .
       Handler: src.sessionEnd.session_end_lambda.lambda_handler
       Runtime: python3.7
@@ -180,8 +180,8 @@ Resources:
   consumer:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub ${StackTagName}-consumer-${EnvironmentTagName}
-      Description: !Sub Stack ${StackTagName} Environment ${EnvironmentTagName} Function consumer
+      FunctionName: !Sub "${StackTagName}-consumer-${EnvironmentTagName}"
+      Description: !Sub "Stack ${StackTagName} Environment ${EnvironmentTagName} Function consumer"
       CodeUri: .
       Handler: src.consumer.consumer_lambda.lambda_handler
       Runtime: python3.7
@@ -231,7 +231,7 @@ Resources:
   cashTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Sub ${StackTagName}-cashTable-${EnvironmentTagName}
+      TableName: !Sub "${StackTagName}-cashTable-${EnvironmentTagName}"
       AttributeDefinitions:
         - AttributeName: 'prefix_lap_id '
           AttributeType: S
@@ -251,8 +251,8 @@ Resources:
     Properties:
       MinCapacity: 1
       MaxCapacity: 20
-      ResourceId: !Sub function:${producer}:${Env}
-      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+      ResourceId: !Sub "function:${producer}:${Env}"
+      RoleARN: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency"
       ScalableDimension: lambda:function:ProvisionedConcurrency
       ServiceNamespace: lambda
     DependsOn: producer
@@ -271,8 +271,8 @@ Resources:
     Properties:
       MinCapacity: 1
       MaxCapacity: 30
-      ResourceId: !Sub function:${consumer}:${Env}
-      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+      ResourceId: !Sub "function:${consumer}:${Env}"
+      RoleARN: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency"
       ScalableDimension: lambda:function:ProvisionedConcurrency
       ServiceNamespace: lambda
     DependsOn: consumer
