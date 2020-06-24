@@ -52,7 +52,7 @@ Resources:
       FunctionName: !Sub ${StackTagName}-producer-${EnvironmentTagName}
       Description: !Sub Stack ${StackTagName} Environment ${EnvironmentTagName} Function Resources
       CodeUri: .
-      AutoPublishAlias: !Ref Env
+      AutoPublishAlias: live
       Handler: src.producer.producer_lambda.lambda_handler
       Runtime: python3.7
       MemorySize: 3008
@@ -82,6 +82,8 @@ Resources:
             Path: /newLap
             Method: ANY
             RestApiId: !Ref ProcessLapApiGateway
+      DeploymentPreference:
+        Type: AllAtOnce
   ProcessLapUsagePlan:
     Type: AWS::ApiGateway::UsagePlan
     Properties:
@@ -223,6 +225,9 @@ Resources:
           Properties:
             Queue: !GetAtt ProcessLapsProducerToConsumer.Arn
             BatchSize: 1
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: AllAtOnce
   cashTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -241,28 +246,47 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: '5'
         WriteCapacityUnits: '5'
+  producerScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MinCapacity: 1
+      MaxCapacity: 20
+      ResourceId: !Sub function:${producer}:live
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+      ScalableDimension: lambda:function:ProvisionedConcurrency
+      ServiceNamespace: lambda
+    DependsOn: producerAliaslive
+  producerScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: utilization
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref producerScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 0.7
+        PredefinedMetricSpecification:
+          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
+  consumerScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MinCapacity: 1
+      MaxCapacity: 30
+      ResourceId: !Sub function:${consumer}:live
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/lambda.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_LambdaConcurrency
+      ScalableDimension: lambda:function:ProvisionedConcurrency
+      ServiceNamespace: lambda
+    DependsOn: consumerAliaslive
+  consumerScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: utilization
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref consumerScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        TargetValue: 0.7
+        PredefinedMetricSpecification:
+          PredefinedMetricType: LambdaProvisionedConcurrencyUtilization
 Parameters:
-  griiipApiUrl:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/griiipApiUrl
-  apiGetAwayKey:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/apiGetAwayKey
-  MySqlHost:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/MySqlHost
-  MySqlUser:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/MySqlUser
-  MySqlPass:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/MySqlPass
-  MySqlSchma:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/MySqlSchma
-  RdsConnPoolSize:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/RdsConnPoolSize
   KpiLambda:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/KpiLambda
@@ -275,9 +299,3 @@ Parameters:
   EnvironmentTagName:
     Type: String
     Description: Environment Name (injected by Stackery at deployment time)
-  Region:
-    Type: String
-    Default: eu-central-1
-  AccountId:
-    Type: String
-    Default: '645717288378'
