@@ -175,13 +175,8 @@ Resources:
         - AWSXrayWriteOnlyAccess
         - SQSPollerPolicy:
             QueueName: !GetAtt ProcessLapsProducerToConsumer.QueueName
-        - Version: '1'
-          Statement:
-            - Sid: lambdaInvokeiton
-              Effect: Allow
-              Action:
-                - lambda:InvokeFunction
-              Resource: !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${KpiLambda}*" #!Ref KpiLambda #'*'
+        - LambdaInvokePolicy:
+            FunctionName: !Ref KpiLambda
       Environment:
         Variables:
           logLevel: !FindInMap
