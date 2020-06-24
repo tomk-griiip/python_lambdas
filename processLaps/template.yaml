@@ -181,7 +181,7 @@ Resources:
               Effect: Allow
               Action:
                 - lambda:InvokeFunction
-              Resource: '*'
+              Resource: !Ref KpiLambda #'*'
       Environment:
         Variables:
           logLevel: !FindInMap
