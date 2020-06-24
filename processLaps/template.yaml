@@ -275,7 +275,7 @@ Parameters:
     Default: /<EnvironmentName>/AccountId
   recourseTimeOut:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/recorecesTimeOut
+    Default: /<EnvironmentName>/recourseTimeOut
   griiipApiUrl:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/griiipApiUrl
