@@ -73,7 +73,7 @@ Resources:
           QUEUE_NAME: !GetAtt ProcessLapsProducerToConsumer.QueueName
           QUEUE_ARN: !GetAtt ProcessLapsProducerToConsumer.Arn
           QUEUE_URL: !Ref ProcessLapsProducerToConsumer
-          TABLE_NAME: !Ref cashTable
+          TABLE_NAME: !Ref cashTable #!Join ["",[!Ref StackTagName, "-cashTable-", !Ref EnvironmentTagName]] #!Ref cashTable
           TABLE_ARN: !GetAtt cashTable.Arn
       Events:
         ProcessLapApiGatewayANYnewLap:
@@ -212,15 +212,15 @@ Resources:
     Properties:
       TableName: !Join ["",[!Ref StackTagName, "-cashTable-", !Ref EnvironmentTagName]]
       AttributeDefinitions:
-        - AttributeName: 'prefix_lap_id '
+        - AttributeName: 'prefix_lap_id'
           AttributeType: S
-        - AttributeName: 'lap_number '
+        - AttributeName: 'lap_number'
           AttributeType: S
       BillingMode: PROVISIONED
       KeySchema:
-        - AttributeName: 'prefix_lap_id '
+        - AttributeName: 'prefix_lap_id'
           KeyType: HASH
-        - AttributeName: 'lap_number '
+        - AttributeName: 'lap_number'
           KeyType: RANGE
       ProvisionedThroughput:
         ReadCapacityUnits: '5'
@@ -306,6 +306,8 @@ Parameters:
   StackTagName:
     Type: String
     Description: Stack Name (injected by Stackery at deployment time)
+    Default: processLap
   EnvironmentTagName:
     Type: String
     Description: Environment Name (injected by Stackery at deployment time)
+    Default: test

@@ -25,7 +25,7 @@ mySqlPool = ConnectionPool(size=int(os.environ["rds_connection_pull_size"]), nam
 sqs = boto3.client('sqs')
 queueUrl = os.environ['QUEUE_URL']
 PROCESS_NAME = "laps_producer"
-DDB_CACHE_TABLE = os.environ['cache_ddb_table_name']
+DDB_CACHE_TABLE = os.environ['TABLE_NAME']
 
 
 def put_previous_lap_to_sqs(lap: LapBean) -> bool:
