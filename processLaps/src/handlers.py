@@ -14,6 +14,7 @@ from src.interfaces import IDataBase, IDataBaseClient
 from src.griiip_exeptions import TracksException, RunDataException, ApiException
 from . import logger
 
+
 class LapBean(object):
     """
 
@@ -49,13 +50,14 @@ class LapBean(object):
     2 digit second
     3 digit lap number  
     @return {car_id}{day}{month}{year}{hour}{minutes}{second}{lap_number}
-                3     2     2       2   2       2       2       3  
+            n sefix    2     2       2   2       2       2       3  
     """
 
     def create_lap_id(self):
         start_date: datetime = datetime.utcfromtimestamp(self.lap.lapStartTime)
         day, month, year, hour, minutes, second = get_day_month_year(start_date)
-        car_id: str = int_to_tree_digit_string(self.lap.carId)
+        # dont need to parse car number to tree digit string
+        car_id: str = self.lap.carId  # int_to_tree_digit_string(self.lap.carId)
         lap_number = "000"  # temp value because we dont know yet what lap is it
         return f"{car_id}{day}{month}{year}{hour}{minutes}{second}{lap_number}"
 
@@ -115,7 +117,7 @@ class RunData(object):
         num_dist_glit: int = removed_first_bad_distance_rows()
         if num_dist_glit > 0:
             logger.warning(f"FOUND {num_dist_glit} BAD ROWS FOR LAP {kwargs['lapName']}"
-                  f"\nLAP FIRST ROWS DISTANCE IS BIGGER THEN THE NEXT ROWS")
+                           f"\nLAP FIRST ROWS DISTANCE IS BIGGER THEN THE NEXT ROWS")
 
         return runData[num_dist_glit:]  # remove the rows with the distance glitches in the
 

@@ -145,7 +145,7 @@ class Config:
     """
     lambdasToCalculateKpi: dict = {
         #'arn:aws:lambda:eu-central-1:645717288378:function:test_tom'
-        'G1': [{'lambda': os.environ['g1CalcKpiFunc'], 'params': {}}]
+        'G1': [{'lambda': os.environ['KpiLambda'], 'params': {}}]
     }
     # lap classification that need kpi calculation
     # Todo remove NON_LEGIT its just for develop peruse
