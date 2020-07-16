@@ -299,7 +299,7 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/RdsConnPoolSize
   CalcKpiFor:
-    Type: AWS::SSM::Parameter::Value<List<String>>
+    Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/CalcKpiFor
   KpiLambda:
     Type: AWS::SSM::Parameter::Value<String>
