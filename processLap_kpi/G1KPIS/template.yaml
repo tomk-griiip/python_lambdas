@@ -14,6 +14,8 @@ Resources:
   G1KPIS:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
+      FunctionName: !Join ["",[!Ref StackTagName, "-producer-", !Ref EnvironmentTagName]]
+      Description: !Join ["Stack",[!Ref StackTagName, "Environment", !Ref EnvironmentTagName, "Function Resources"]]
       CodeUri: src/
       Handler: app.lambda_handler
       Runtime: python3.7
@@ -33,3 +35,11 @@ Parameters:
   clackKpiNumOfPoints:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/clackKpiNumOfPoints
+  StackTagName:
+    Type: String
+    Description: Stack Name (injected by Stackery at deployment time)
+    Default: G1KPIS
+  EnvironmentTagName:
+    Type: String
+    Description: Environment Name (injected by Stackery at deployment time)
+    Default: test
