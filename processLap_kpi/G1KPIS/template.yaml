@@ -16,6 +16,7 @@ Resources:
     Properties:
       FunctionName: !Join ["",["processLap-", !Ref StackTagName, "-", !Ref EnvironmentTagName]]
       Description: !Join ["Stack",[!Ref StackTagName, "Environment", !Ref EnvironmentTagName, "Function Resources"]]
+      AutoPublishAlias: Live
       CodeUri: src/
       Handler: app.lambda_handler
       Runtime: python3.7
