@@ -14,7 +14,7 @@ Resources:
   G1KPIS:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      FunctionName: !Join ["",[!Ref StackTagName, "-producer-", !Ref EnvironmentTagName]]
+      FunctionName: !Join ["",[!Ref StackTagName, "-", !Ref EnvironmentTagName]]
       Description: !Join ["Stack",[!Ref StackTagName, "Environment", !Ref EnvironmentTagName, "Function Resources"]]
       CodeUri: src/
       Handler: app.lambda_handler
