@@ -19,6 +19,17 @@ Resources:
       Runtime: python3.7
       Environment:
         Variables:
-          griiip_api_url: https://2kdzicozch.execute-api.eu-central-1.amazonaws.com/prod/api/v1
-          griiip_api_key: sBTloeh98b1csyMLG7kuJ3xdYehFjeEJ3gpVIgyr
-          num_of_points: 5
+          griiip_api_url: !Ref griiipApiUrl
+          griiip_api_key: !Ref apiGetAwayKey
+          num_of_points: !Ref clackKpiNumOfPoints #5
+
+Parameters:
+  griiipApiUrl:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/griiipApiUrl
+  apiGetAwayKey:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/apiGetAwayKey
+  clackKpiNumOfPoints:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/clackKpiNumOfPoints
