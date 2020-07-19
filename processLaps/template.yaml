@@ -180,6 +180,7 @@ Resources:
             FunctionName: !Ref KpiLambda
       Environment:
         Variables:
+          CalcKpiFor: !Ref CalcKpiFor
           logLevel: !FindInMap
             - logLevel
             - !Ref Env
@@ -297,6 +298,9 @@ Parameters:
   RdsConnPoolSize:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/RdsConnPoolSize
+  CalcKpiFor:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/CalcKpiFor
   KpiLambda:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/KpiLambda
