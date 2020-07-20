@@ -178,6 +178,13 @@ Resources:
             QueueName: !GetAtt ProcessLapsProducerToConsumer.QueueName
         - LambdaInvokePolicy:
             FunctionName: !Ref KpiLambda
+        - Statement:
+            - Sid: invokeAllLambdas
+              Effect: Allow
+              Action:
+                - lambda:InvokeFunction
+                - lambda:InvokeAsync
+              Resource: '*'
       Environment:
         Variables:
           CalcKpiFor: !Ref CalcKpiFor
