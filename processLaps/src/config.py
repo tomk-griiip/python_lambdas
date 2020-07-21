@@ -1,7 +1,9 @@
 from src.lambda_utils import *
 import src.griiip_const as const
 import os
+import boto3
 
+ssm = boto3.client('ssm')
 # -------------- static method's to help building the beans objects ---------------#
 
 """
@@ -139,21 +141,21 @@ class Config:
         "__low_speed_time": get_low_speed_time
 
     }
-    """
-    lambdas that calculate kpi key => the account name each account will have different kpi and different lambdas
-    value = > list of [{lambda: {lambda name}, params:{dict of params to pass to the lambda}}]
-    """
-    lambdasToCalculateKpi: dict = {
-        #'arn:aws:lambda:eu-central-1:645717288378:function:test_tom'
-        'G1': [{'lambda': os.environ['KpiLambda'], 'params': {}}]
-    }
-    # lap classification that need kpi calculation
-    # Todo remove NON_LEGIT its just for develop peruse
-    classify_that_calc_kpi_list: [] = [const.classifications.COMPETITIVE, const.classifications.NON_SUCCESSFUL,
-                                       const.classifications.NON_LEGIT]
 
     def __init__(self):
-        pass
+        self.parameters = {}
+        nextToken = ' '
+        env = os.environ['Env']
+        while nextToken is not None:
+            _parameters = ssm.get_parameters_by_path(Path=f"/{env}", Recursive=True, NextToken=nextToken)
+            nextToken = _parameters.get('NextToken', None)
+            for p in _parameters['Parameters']:
+                if not p['Name'].startswith(f'/{env}/processLaps/'):
+                    continue
+                key = p['Name'][len(f'/{env}/processLaps/'):]
+                value = p['Value']
+                self.parameters[key] = value
 
 
 config = Config()
+print('end')

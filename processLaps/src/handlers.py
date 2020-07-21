@@ -13,6 +13,7 @@ import os
 from src.interfaces import IDataBase, IDataBaseClient
 from src.griiip_exeptions import TracksException, RunDataException, ApiException
 from . import logger
+from .config import config as conf
 
 
 class LapBean(object):
@@ -149,10 +150,10 @@ class Lap(Constant):
     # constant property's the value for them is from template.yaml file
     # do not change change them from code !!!!
 
-    MAX_ACC_PERCENT: float = environ('MAX_ACC_PERCENT', float)
-    FULL_LAP_FLOOR: float = environ('FULL_LAP_FLOOR', float)
-    FULL_LAP_CELL = environ('FULL_LAP_CELL')
-    PART_LAP_FLOOR: float = environ('PART_LAP_FLOOR', float)
+    MAX_ACC_PERCENT: float = float(conf.parameters['MAX_ACC_PERCENT'])
+    FULL_LAP_FLOOR: float = float(conf.parameters['FULL_LAP_FLOOR'])
+    FULL_LAP_CELL: float = float(conf.parameters['FULL_LAP_CELL'])
+    PART_LAP_FLOOR: float = float(conf.parameters['PART_LAP_FLOOR'])
     _trackGpsLength: float = 0.0
     _columns_to_update: dict = {}
     _classification: str = None

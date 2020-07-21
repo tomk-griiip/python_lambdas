@@ -12,7 +12,7 @@ from ..lambda_utils import *
 from ..griiip_const import net, classifications, errorMessages
 from ..db_wrapper import DbApiWrapper
 from . import logger
-db = DbApiWrapper(api_address=environ('griiip_api_url'), api_key=environ('griiip_api_key'))
+db = DbApiWrapper(api_address=conf.parameters['griiipApiUrl'], api_key=conf.parameters['apiGetAwayKey'])
 laps_from_dynamo_table = os.environ['ddb_lap_table']
 
 
@@ -138,9 +138,10 @@ def handle_lap(record: dict, conn):
         lapClass: str = classifyLap(lap=lap, classifier=ruleBaseClassifier)  # classify the lap
         lap.set_classification(classification=lapClass)  # set the class to the lap
 
-        if lapClass in os.environ['CalcKpiFor'].split(','): #conf.classify_that_calc_kpi_list:  # if the classification need kpi calculation
-            with AsyncLoopManager() as loop:
-                kpi: {} = calculate_kpi(loop=loop, lapId=lap.getLapName(), config=conf)  # calculate kpi
+        # conf.classify_that_calc_kpi_list:  # if the classification need kpi calculation
+        if lapClass in conf.parameters['CalcKpiFor'].split(','):
+            kpi: {} = calculate_kpi(lapId=lap.getLapName(), config=conf)  # calculate kpi
+            print(f"kpiis {kpi}\n")
             lap.setColumnsToUpdate(kpi)  # add the result to columns to update
 
     except KpiLambdaError as kpiError:

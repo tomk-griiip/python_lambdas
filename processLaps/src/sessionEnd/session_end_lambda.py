@@ -5,18 +5,19 @@ import traceback
 from botocore.exceptions import ClientError
 from ..db_wrapper import DbPyMySQL  # sql as db
 from ..sql_pool_connection import ConnectionPool
+from ..config import config as conf
 
 """
 create sql pool c
 """
-rdsConfig = {'host': os.environ["my_sql_host"],
-             'user': os.environ["my_sql_user"],
-             'password': os.environ["my_sql_pass"],
-             'database': os.environ["my_sql_db"],
+rdsConfig = {'host': conf.parameters['MySqlHost'],
+             'user': conf.parameters['MySqlUser'],
+             'password': conf.parameters['MySqlPass'],
+             'database': conf.parameters['MySqlSchma'],
              'autocommit': False
              }
 
-mySqlPool = ConnectionPool(size=int(os.environ["rds_connection_pull_size"]), name='pool1', **rdsConfig)
+mySqlPool = ConnectionPool(size=int(conf.parameters['RdsConnPoolSize']), name='pool1', **rdsConfig)
 
 QUEUE_URL = os.environ['QUEUE_URL']
 sqs = boto3.client('sqs')
