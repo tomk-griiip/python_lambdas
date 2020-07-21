@@ -178,6 +178,11 @@ Resources:
                 - lambda:InvokeFunction
                 - lambda:InvokeAsync
               Resource: '*'
+            - Sid: ssm
+              Effect: Allow
+              Action: ssm:GetParameters
+              Resource: '*'
+
       Environment:
         Variables:
           logLevel: !FindInMap
