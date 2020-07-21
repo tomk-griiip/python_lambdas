@@ -53,7 +53,7 @@ def lambda_handler(event, context):
 
     loop.run_until_complete(asyncio.wait(tasks))
     #loop.close()
-
+    print(f"async_res: {async_res}\n")
     kpiDict: {} = calculate(filteredListsDict=async_res)  # calculate KPI
     return {
         "statusCode": 200,
