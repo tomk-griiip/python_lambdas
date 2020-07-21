@@ -52,7 +52,7 @@ def lambda_handler(event, context):
         tasks.append(_t)  # add task to task list
 
     loop.run_until_complete(asyncio.wait(tasks))
-    loop.close()
+    #loop.close()
 
     kpiDict: {} = calculate(filteredListsDict=async_res)  # calculate KPI
     return {
