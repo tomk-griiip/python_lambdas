@@ -302,18 +302,18 @@ Parameters:
   Env:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /<EnvironmentName>/processLaps/Env
-  MAX_ACC_PERCENT:
+  mAXACCPercent:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/processLaps/MAX_ACC_PERCENT
-  FULL_LAP_FLOOR:
+    Default: /<EnvironmentName>/processLaps/mAXACCPercent
+  FullLapFloor:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/processLaps/FULL_LAP_FLOOR
-  FULL_LAP_CELL:
+    Default: /<EnvironmentName>/processLaps/FullLapFloor
+  FullLapCell:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/processLaps/FULL_LAP_CELL
-  PART_LAP_FLOOR:
+    Default: /<EnvironmentName>/processLaps/FullLapCell
+  PartLapFloor:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/processLaps/PART_LAP_FLOOR
+    Default: /<EnvironmentName>/processLaps/PartLapFloor
   StackTagName:
     Type: String
     Description: Stack Name (injected by Stackery at deployment time)

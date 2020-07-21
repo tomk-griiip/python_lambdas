@@ -150,10 +150,10 @@ class Lap(Constant):
     # constant property's the value for them is from template.yaml file
     # do not change change them from code !!!!
 
-    MAX_ACC_PERCENT: float = float(conf.parameters['MAX_ACC_PERCENT'])
-    FULL_LAP_FLOOR: float = float(conf.parameters['FULL_LAP_FLOOR'])
-    FULL_LAP_CELL: float = float(conf.parameters['FULL_LAP_CELL'])
-    PART_LAP_FLOOR: float = float(conf.parameters['PART_LAP_FLOOR'])
+    MAX_ACC_PERCENT: float = float(conf.parameters['mAXACCPercent'])
+    FULL_LAP_FLOOR: float = float(conf.parameters['FullLapFloor'])
+    FULL_LAP_CELL: float = float(conf.parameters['FullLapCell'])
+    PART_LAP_FLOOR: float = float(conf.parameters['PartLapFloor'])
     _trackGpsLength: float = 0.0
     _columns_to_update: dict = {}
     _classification: str = None
