@@ -57,6 +57,17 @@ Resources:
             QueueName: !GetAtt ProcessLapsProducerToConsumer.QueueName
         - DynamoDBCrudPolicy:
             TableName: !Ref cashTable
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:DescribeParameters
+              Resource: "*"
+            - Effect: Allow
+              Action:
+                - ssm:GetParameters
+                - ssm:GetParameter
+                - ssm:GetParametersByPath
+              Resource: "*"
       Environment:
         Variables:
           logLevel: !FindInMap
@@ -136,6 +147,17 @@ Resources:
         - AWSXrayWriteOnlyAccess
         - SQSSendMessagePolicy:
             QueueName: !GetAtt ProcessLapsProducerToConsumer.QueueName
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ssm:DescribeParameters
+              Resource: "*"
+            - Effect: Allow
+              Action:
+                - ssm:GetParameters
+                - ssm:GetParameter
+                - ssm:GetParametersByPath
+              Resource: "*"
       Events:
         ProcessLapApiGatewayANYsessionEnd:
           Type: Api
@@ -178,10 +200,18 @@ Resources:
                 - lambda:InvokeFunction
                 - lambda:InvokeAsync
               Resource: '*'
-            - Sid: ssm
+            - Sid: ssm1
               Effect: Allow
-              Action: ssm:GetParameters
-              Resource: '*'
+              Action:
+              - ssm:DescribeParameters
+              Resource: "*"
+            - Sid: ssm2
+              Effect: Allow
+              Action:
+              - ssm:GetParameters
+              - ssm:GetParameter
+              - ssm:GetParametersByPath
+              Resource: "*"
 
       Environment:
         Variables:
