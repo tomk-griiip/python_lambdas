@@ -34,17 +34,10 @@ Globals:
           - !Ref Env
           - level
         common_mappings: serverless.common.yml:custom
-        griiip_api_url: !Ref griiipApiUrl
-        griiip_api_key: !Ref apiGetAwayKey
         cache_ddb_table_name: !Ref cashTable
         cache_ddb_table_key: prefix_lap_id
-        my_sql_host: !Ref MySqlHost
-        my_sql_user: !Ref MySqlUser
-        my_sql_pass: !Ref MySqlPass
-        my_sql_db: !Ref MySqlSchma
-        rds_connection_pull_size: !Ref RdsConnPoolSize
-        Region: !Ref Region
-        AccountId: !Ref AccountId
+        Env: !Ref EnvironmentTagName
+        StackTagName: !Ref StackTagName
 Resources:
   producer:
     Type: AWS::Serverless::Function
@@ -187,15 +180,10 @@ Resources:
               Resource: '*'
       Environment:
         Variables:
-          CalcKpiFor: !Ref CalcKpiFor
           logLevel: !FindInMap
             - logLevel
             - !Ref Env
             - level
-          MAX_ACC_PERCENT: 0.8
-          FULL_LAP_FLOOR: 0.9
-          FULL_LAP_CELL: 1.03
-          PART_LAP_FLOOR: 0.1
           runDataRetrieveLimit: 5000
           runDataPaging: 1
           ddb_lap_table: !FindInMap
@@ -277,43 +265,55 @@ Resources:
 Parameters:
   Region:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/Region
+    Default: /<EnvironmentName>/processLaps/Region
   AccountId:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/AccountId
+    Default: /<EnvironmentName>/processLaps/AccountId
   recourseTimeOut:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/recourseTimeOut
+    Default: /<EnvironmentName>/processLaps/recourseTimeOut
   griiipApiUrl:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/griiipApiUrl
+    Default: /<EnvironmentName>/processLaps/griiipApiUrl
   apiGetAwayKey:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/apiGetAwayKey
+    Default: /<EnvironmentName>/processLaps/apiGetAwayKey
   MySqlHost:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/MySqlHost
+    Default: /<EnvironmentName>/processLaps/MySqlHost
   MySqlUser:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/MySqlUser
+    Default: /<EnvironmentName>/processLaps/MySqlUser
   MySqlPass:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/MySqlPass
+    Default: /<EnvironmentName>/processLaps/MySqlPass
   MySqlSchma:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/MySqlSchma
+    Default: /<EnvironmentName>/processLaps/MySqlSchma
   RdsConnPoolSize:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/RdsConnPoolSize
+    Default: /<EnvironmentName>/processLaps/RdsConnPoolSize
   CalcKpiFor:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/CalcKpiFor
+    Default: /<EnvironmentName>/processLaps/CalcKpiFor
   KpiLambda:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/KpiLambda
+    Default: /<EnvironmentName>/processLaps/KpiLambda
   Env:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/Env
+    Default: /<EnvironmentName>/processLaps/Env
+  MAX_ACC_PERCENT:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/processLaps/MAX_ACC_PERCENT
+  FULL_LAP_FLOOR:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/processLaps/FULL_LAP_FLOOR
+  FULL_LAP_CELL:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/processLaps/FULL_LAP_CELL
+  PART_LAP_FLOOR:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /<EnvironmentName>/processLaps/PART_LAP_FLOOR
   StackTagName:
     Type: String
     Description: Stack Name (injected by Stackery at deployment time)

@@ -4,6 +4,7 @@ from ..handlers import LapBean
 from ..lambda_utils import *
 from ..griiip_exeptions import *
 from ..griiip_const import net
+from ..config import config as conf
 import boto3
 import os
 from ..db_wrapper import DbPyMySQL, DynamoDb
@@ -14,14 +15,14 @@ from . import logger
 """
 create sql pool connection
 """
-rdsConfig = {'host': os.environ["my_sql_host"],
-             'user': os.environ["my_sql_user"],
-             'password': os.environ["my_sql_pass"],
-             'database': os.environ["my_sql_db"],
+rdsConfig = {'host': conf.parameters['MySqlHost'],
+             'user': conf.parameters['MySqlUser'],
+             'password': conf.parameters['MySqlPass'],
+             'database': conf.parameters['MySqlSchma'],
              'autocommit': False
              }
 
-mySqlPool = ConnectionPool(size=int(os.environ["rds_connection_pull_size"]), name='pool1', **rdsConfig)
+mySqlPool = ConnectionPool(size=int(conf.parameters['RdsConnPoolSize']), name='pool1', **rdsConfig)
 sqs = boto3.client('sqs')
 queueUrl = os.environ['QUEUE_URL']
 PROCESS_NAME = "laps_producer"

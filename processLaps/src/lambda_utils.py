@@ -1,16 +1,13 @@
-import asyncio
+
 from builtins import type
 
 import math
-import time
+
 from math import log10
 from datetime import datetime
 import boto3
-from boto3.dynamodb.conditions import Key
+
 from botocore.exceptions import ClientError
-# import beans as beans
-# from beans import Lap, RunDataRowEncoder
-from .async_manager import *
 import os
 import json
 
@@ -186,7 +183,7 @@ def calculate_acc_comb(lat_sum, long_sum, num_of_items):
     return acc_comb
 
 
-def calculate_kpi(loop, **args):  # lap, config, loop, accountName="G1"):
+def calculate_kpi(**args):  # lap, config, loop, accountName="G1"):
     """
 
     Parameters
@@ -212,28 +209,19 @@ def calculate_kpi(loop, **args):  # lap, config, loop, accountName="G1"):
         lapId, config, = args['lapId'], args['config']
         accountName = args['accountName'] if 'accountName' in args else 'G1'
         num_of_points: int = environ('kpi_num_of_points', int)
-        tasks: list = []
 
         limit, page = environ('runDataRetrieveLimit', int), environ('runDataPaging', int)
 
         _payload = {'lapName': lapId, 'page': page, 'limit': limit, }
 
-        async def invokeLambdaKpi(lambdaName: str, payload={}) -> {}:
-            res = lambdaClient.invoke(FunctionName=lambdaName, InvocationType='RequestResponse',
-                                      Payload=json.dumps({'lambdaName': lambdaName, 'payload': payload}))
-            return json.loads(res['Payload'].read())
+        _lambda = json.loads(config.parameters['KpiLambda'])[accountName]
 
-        for task in config.lambdasToCalculateKpi[accountName]:
-            _payload['params'] = task['params']
-            tasks.append(loop.create_task(
-                invokeLambdaKpi(lambdaName=task['lambda'], payload=_payload)))  # , payload=lap.getLapQuads())))
-        _kpi_dict: {} = {}
-
-        done, _ = loop.run_until_complete(asyncio.wait(tasks))
-        for fut in done:
-            res = json.loads(fut.result()['body'])['value']
-            _kpi_dict = {**_kpi_dict, **res}
-
+        if len(_lambda['params']) > 0 :
+            _payload['params'] = _lambda['params']
+        res = lambdaClient.invoke(FunctionName=_lambda['name'], InvocationType='RequestResponse',
+                                  Payload=json.dumps({'lambdaName': _lambda['name'], 'payload': _payload}))
+        lambda_res = json.loads(res['Payload'].read())
+        _kpi_dict: {} = {**lambda_res}
         return _kpi_dict
 
     except KeyError as ke:
