@@ -29,13 +29,13 @@ Resources:
 Parameters:
   griiipApiUrl:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/griiipApiUrl
+    Default: /<EnvironmentName>/processLaps/griiipApiUrl
   apiGetAwayKey:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/apiGetAwayKey
+    Default: /<EnvironmentName>/processLaps/apiGetAwayKey
   clackKpiNumOfPoints:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /<EnvironmentName>/clackKpiNumOfPoints
+    Default: /<EnvironmentName>/processLaps/clackKpiNumOfPoints
   StackTagName:
     Type: String
     Description: Stack Name (injected by Stackery at deployment time)
