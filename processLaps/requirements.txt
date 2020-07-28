@@ -1,3 +1,4 @@
 requests
 PyMySQL
+watchtower
 #pymysql-pool
