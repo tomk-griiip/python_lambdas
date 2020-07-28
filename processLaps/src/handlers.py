@@ -50,7 +50,7 @@ class LapBean(object):
     2 digit minutes
     2 digit second
     3 digit lap number  
-    @return {car_id}{day}{month}{year}{hour}{minutes}{second}{lap_number}
+    @return {car_id}{month}{day}{year}{hour}{minutes}{second}{lap_number}
             n sefix    2     2       2   2       2       2       3  
     """
 
@@ -60,7 +60,7 @@ class LapBean(object):
         # dont need to parse car number to tree digit string
         car_id: str = self.lap.carId  # int_to_tree_digit_string(self.lap.carId)
         lap_number = "000"  # temp value because we dont know yet what lap is it
-        return f"{car_id}{day}{month}{year}{hour}{minutes}{second}{lap_number}"
+        return f"{car_id}{month}{day}{year}{hour}{minutes}{second}{lap_number}"
 
 
 class RunDataRow(object):
