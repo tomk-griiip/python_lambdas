@@ -56,6 +56,7 @@ def lambda_handler(event, context):
         # create a list to keep connections
         parent_connections = []
         for record in event['Records']:
+            logger.info(f"records : {record['body']}")
             payload: dict = record['body']
             for _record in payload:
                 parent_conn, child_conn = Pipe()

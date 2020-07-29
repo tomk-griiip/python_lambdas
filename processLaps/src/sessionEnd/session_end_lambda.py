@@ -6,7 +6,7 @@ from botocore.exceptions import ClientError
 from ..db_wrapper import DbPyMySQL  # sql as db
 from ..sql_pool_connection import ConnectionPool
 from ..config import config as conf
-
+from . import logger
 """
 create sql pool c
 """
@@ -32,7 +32,7 @@ def lambda_handler(event, context):
             statusCode = 500
             message = "request need to have body and sessionId "
             return
-
+        logger.info(f"record : {event['body']}")
         sessionId = event['body']['sessionId']
         query: str = "select tracksessions.timeStart,tracksessions.timeEnd, trackevents.TrackId from tracksessions " \
                      "inner join trackevents on tracksessions.TrackEventId = trackevents.id " \
@@ -52,8 +52,10 @@ def lambda_handler(event, context):
         message, statusCode = handleSession(sessionId=sessionId, **sessionInfo, db=db)
 
     except Exception as e:
+        logger.error(f"error: {e}\n")
+        logger.error(traceback.format_stack())
         statusCode = 500
-        message = e
+        message = f"{e} \n {traceback.format_stack()}"
 
     finally:
         return {

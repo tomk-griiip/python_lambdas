@@ -37,8 +37,8 @@ class LapBean(object):
 
     def __init__(self, *, record: dict):
         self.lap = self.ReceivedLap(record=record)
-        self.lapId: str = self.create_lap_id()
-        self.lap.lapStartTime: datetime = datetime.utcfromtimestamp(self.lap.lapStartTime)
+        self.lap.lapStartTime, self.lapId = self.create_lap_id()
+
 
     """
     @create_lap_id function generate the lap id 
@@ -55,12 +55,16 @@ class LapBean(object):
     """
 
     def create_lap_id(self):
+        # reformat time stamp that came with milisecounds
+        while len(str(self.lap.lapStartTime)) > 10:
+            self.lap.lapStartTime = int( self.lap.lapStartTime / 10 )
+
         start_date: datetime = datetime.utcfromtimestamp(self.lap.lapStartTime)
         day, month, year, hour, minutes, second = get_day_month_year(start_date)
         # dont need to parse car number to tree digit string
         car_id: str = self.lap.carId  # int_to_tree_digit_string(self.lap.carId)
         lap_number = "000"  # temp value because we dont know yet what lap is it
-        return f"{car_id}{month}{day}{year}{hour}{minutes}{second}{lap_number}"
+        return start_date, f"{car_id}{month}{day}{year}{hour}{minutes}{second}{lap_number}"
 
 
 class RunDataRow(object):

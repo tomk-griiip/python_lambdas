@@ -189,6 +189,7 @@ def lambda_handler(event, context):
     ddb = DynamoDb()
     try:
         _record = json.loads(event['body'])
+        logger.info(f"record : {_record}")
         __lapId = LambdaLogic(db=db, ddb=ddb).handle_record(record=_record)
         laps.append(__lapId)
 
