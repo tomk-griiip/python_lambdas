@@ -33,7 +33,7 @@ def lambda_handler(event, context):
             message = "request need to have body and sessionId "
             return
         logger.info(f"record : {event['body']}")
-        sessionId = event['body']['sessionId']
+        sessionId = json.loads(event['body'])['sessionId']
         query: str = "select tracksessions.timeStart,tracksessions.timeEnd, trackevents.TrackId from tracksessions " \
                      "inner join trackevents on tracksessions.TrackEventId = trackevents.id " \
                      f"where tracksessions.id={sessionId}"
